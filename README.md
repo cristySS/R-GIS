@@ -199,7 +199,7 @@ El **tiempo de aplicación**:
 
 La siguiente *Ilustración 4. Modelo del Prototipo*, plantea las tecnologías a incluir dentro del desarrollo del prototipo:
 
-![image-20220701140857346](C:\Users\csama\AppData\Roaming\Typora\typora-user-images\image-20220701140857346.png)
+![image-20220701140857346](https://github.com/RogerVazquezNieves/R-GIS/blob/main/Imagenes/MODELO.jpg)
 
 *Ilustración 4. Modelo del Prototipo*
 
