@@ -205,7 +205,7 @@ La siguiente *Ilustración 4. Modelo del Prototipo*, plantea las tecnologías a 
 
 Una vez que tenemos ya los tiempos de riego de cada sección, podemos comenzar el diseño del prototipo, ver *Ilustración 5. Equipamiento.*
 
-![image-20220624171214513](C:\Users\csama\AppData\Roaming\Typora\typora-user-images\image-20220624171214513.png)
+![image-20220624171214513](https://github.com/RogerVazquezNieves/R-GIS/blob/main/Imagenes/mapa2.jpg)
 
 *Ilustración 5. Equipamiento.*
 
