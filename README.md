@@ -71,7 +71,7 @@ La radiación solar puede ser medida con piranómetros, radiómetros o solaríme
 <u>***Procedimiento de cálculo:***</u>
 La radiación que choca a una superficie perpendicular a los rayos del sol en el extremo superior de la atmósfera terrestre se llama constante solar, y tiene un valor aproximado de 0.082 (MJ/m)/min. La intensidad local de la radiación, sin embargo, está determinada por el ángulo entre la dirección de los rayos solares y la superficie de la atmósfera. Este ángulo cambia durante el día y es diferente en diversas latitudes y en diversas épocas del año. La radiación solar recibida en la parte superior de la atmósfera terrestre sobre una superficie horizontal se conoce como radiación (solar) extraterrestre, Ra. Si el sol se encuentra directamente encima de la cabeza, el ángulo de incidencia es cero y la radiación extraterrestre es 0.082 (MJ/m)/min. Así como las estaciones cambian, la posición del sol, la longitud del día y la radiación extraterrestre también cambian. La radiación extraterrestre es entonces una función de la latitud, la época del año y la hora del día. Los valores de Ra a lo largo del año para diversas latitudes se presentan en la *Ilustración 2 Variación anual de la radiación extraterrestre* (Ra) en el ecuador, a los 20° y 40° de latitud norte y sur.
 
-![image-20220614223715996](C:\Users\csama\AppData\Roaming\Typora\typora-user-images\image-20220614223715996.png)
+![image-20220614223715996](https://github.com/cristySS/R-GIS-1/blob/main/Imagenes/Imagen2.jpg)
 
 *Ilustración 2 Variación anual de la radiación extraterrestre (Ra) en el ecuador, a los 20° y 40° de latitud norte y sur.*
 
