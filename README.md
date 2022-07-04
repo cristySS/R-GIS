@@ -61,7 +61,7 @@ En este caso solo se requieren buscando datos para determinar la temperatura pro
 
 ​                                        *Tabla 1. Coeficientes estacionales de consumo para varios cultivos.*
 
-![image-20220614223526270](C:\Users\csama\AppData\Roaming\Typora\typora-user-images\image-20220614223526270.png)
+[![image-20220614223526270](https://github.com/cristySS/R-GIS-1/blob/main/Imagenes/Tabla1.jpg)
 
 
 
