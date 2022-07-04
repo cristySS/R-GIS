@@ -153,7 +153,7 @@ Con el dato anterior podemos obtener el **volumen de agua de cada área a regar*
 
 
 
-![image-20220624171141431](C:\Users\csama\AppData\Roaming\Typora\typora-user-images\image-20220624171141431.png)
+![image-20220624171141431](https://github.com/RogerVazquezNieves/R-GIS/blob/main/Imagenes/oficina_casa_lago.png)
 
  *Ilustración 3. Mapa del sitio.*
 
