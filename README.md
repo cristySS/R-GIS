@@ -9,7 +9,7 @@ La cantidad de agua que utilizan las plantas depende del clima, del contenido de
 
 La programación del riego debe responder a dos preguntas básicas: ¿Cuándo regar? y ¿Cuánto regar? La respuesta a la primera pregunta es el intervalo de riegos y tiene la finalidad de optimizar la producción, conservar el agua, minimizar impactos ambientales y ahorrar dinero. La segunda respuesta debe estar orientada a igualar los requerimientos de agua del cultivo y realizar los aportes en cantidades suficientes, considerando la evaporación, transpiración, radiación, precipitación y temperatura. (*Ilustración 1. Esquema de variables.*)
 
-![img](file:///C:\Users\csama\AppData\Local\Temp\msohtmlclip1\01\clip_image001.png)
+![](https://github.com/cristySS/R-GIS-1/blob/main/Imagenes/Imagen1.jpg)
 
 ​                                                           *Ilustración 1 Esquema de variables.*
 
@@ -61,7 +61,7 @@ En este caso solo se requieren buscando datos para determinar la temperatura pro
 
 ​                                        *Tabla 1. Coeficientes estacionales de consumo para varios cultivos.*
 
-![image-20220614223526270](C:\Users\csama\AppData\Roaming\Typora\typora-user-images\image-20220614223526270.png)
+[![image-20220614223526270](https://github.com/cristySS/R-GIS-1/blob/main/Imagenes/Tabla1.jpg)
 
 
 
@@ -71,7 +71,7 @@ La radiación solar puede ser medida con piranómetros, radiómetros o solaríme
 <u>***Procedimiento de cálculo:***</u>
 La radiación que choca a una superficie perpendicular a los rayos del sol en el extremo superior de la atmósfera terrestre se llama constante solar, y tiene un valor aproximado de 0.082 (MJ/m)/min. La intensidad local de la radiación, sin embargo, está determinada por el ángulo entre la dirección de los rayos solares y la superficie de la atmósfera. Este ángulo cambia durante el día y es diferente en diversas latitudes y en diversas épocas del año. La radiación solar recibida en la parte superior de la atmósfera terrestre sobre una superficie horizontal se conoce como radiación (solar) extraterrestre, Ra. Si el sol se encuentra directamente encima de la cabeza, el ángulo de incidencia es cero y la radiación extraterrestre es 0.082 (MJ/m)/min. Así como las estaciones cambian, la posición del sol, la longitud del día y la radiación extraterrestre también cambian. La radiación extraterrestre es entonces una función de la latitud, la época del año y la hora del día. Los valores de Ra a lo largo del año para diversas latitudes se presentan en la *Ilustración 2 Variación anual de la radiación extraterrestre* (Ra) en el ecuador, a los 20° y 40° de latitud norte y sur.
 
-![image-20220614223715996](C:\Users\csama\AppData\Roaming\Typora\typora-user-images\image-20220614223715996.png)
+![image-20220614223715996](https://github.com/cristySS/R-GIS-1/blob/main/Imagenes/Imagen2.jpg)
 
 *Ilustración 2 Variación anual de la radiación extraterrestre (Ra) en el ecuador, a los 20° y 40° de latitud norte y sur.*
 
@@ -153,7 +153,7 @@ Con el dato anterior podemos obtener el **volumen de agua de cada área a regar*
 
 
 
-![image-20220624171141431](C:\Users\csama\AppData\Roaming\Typora\typora-user-images\image-20220624171141431.png)
+![image-20220624171141431](https://github.com/RogerVazquezNieves/R-GIS/blob/main/Imagenes/oficina_casa_lago.png)
 
  *Ilustración 3. Mapa del sitio.*
 
@@ -199,13 +199,13 @@ El **tiempo de aplicación**:
 
 La siguiente *Ilustración 4. Modelo del Prototipo*, plantea las tecnologías a incluir dentro del desarrollo del prototipo:
 
-![image-20220701140857346](C:\Users\csama\AppData\Roaming\Typora\typora-user-images\image-20220701140857346.png)
+![image-20220701140857346](https://github.com/RogerVazquezNieves/R-GIS/blob/main/Imagenes/MODELO.jpg)
 
 *Ilustración 4. Modelo del Prototipo*
 
 Una vez que tenemos ya los tiempos de riego de cada sección, podemos comenzar el diseño del prototipo, ver *Ilustración 5. Equipamiento.*
 
-![image-20220624171214513](C:\Users\csama\AppData\Roaming\Typora\typora-user-images\image-20220624171214513.png)
+![image-20220624171214513](https://github.com/RogerVazquezNieves/R-GIS/blob/main/Imagenes/mapa2.jpg)
 
 *Ilustración 5. Equipamiento.*
 
