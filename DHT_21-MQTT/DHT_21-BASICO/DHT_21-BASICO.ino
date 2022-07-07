@@ -31,7 +31,7 @@ DHT dht(DHTPIN, DHTTYPE);      //se crea el objeto a usar del sensor
 
 // Condiciones iniciales - Se ejecuta sólo una vez al energizar
 void setup() {                           // Inicio de void setup ()
-  Serial.begin(9600);                    //indica el indice de comunicacion conla computadora y cualquier dispositivo a una veli¿ocidad de comunicacion serial de 9600 bits por segundo (baudios)
+  Serial.begin(9600);                    //indica el indice de comunicacion conla computadora y cualquier dispositivo a una velocidad de comunicacion serial de 9600 bits por segundo (baudios)
   Serial.println(F("DHTxx test!"));      //mensaje de prueba de conectividad con el sensor
 
   dht.begin();                           //iniciaciacion del objeto  
