@@ -263,7 +263,7 @@ Para la conexión puedes guiarte del siguiente esquema (Ver *Ilustración 9. Con
 
 *Ilustración 9. Conexión de Higrómetro.*
 
-La hoja de datos del sensor la puedes consultar en:
+La hoja de datos del sensor la puedes consultar en: https://github.com/cristySS/R-GIS-1/blob/main/HIGROMETRO/DataSheet_Hygrometer_Modul_V1_2.pdf
 
 El código base lo encontraras en:
 
