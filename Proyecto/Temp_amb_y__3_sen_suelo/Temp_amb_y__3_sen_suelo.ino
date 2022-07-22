@@ -20,8 +20,8 @@
 #include "math.h"
 
 // Replace with your network credentials
-const char* ssid     = "IZZI-8F7C";//"INFINITUM5853";// //"GTYV";
-const char* password = "C85261838F7C";//"JKcuTY9G4C"; // //"V1ncul4cI0n*#2021";
+const char* ssid     = "IZZI-8F7C";// //"GTYV"; "INFINITUM5853";
+const char* password = "C85261838F7C";  // //"V1ncul4cI0n*#2021"; "JKcuTY9G4C";
 
 // Define NTP Client to get time
 WiFiUDP ntpUDP;
