@@ -5,7 +5,7 @@
  * Fecha: 14 de junio de 2022
  * 
  * 
- * SENSOR DHT21                           ESP32
+ * SENSOR DHT21                           ESP32 
  * 
  * ROJO      ------resistencia----------- VCC
  * NEGRO     ---------------------------  GND
