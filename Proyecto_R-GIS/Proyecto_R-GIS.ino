@@ -1,11 +1,15 @@
 /*
  * Este programa toma la Fecha y hora de acuerdo a la zona horaria de la CDMX, México
  * Registra las temperaturas amabientales dadas por el DHT21 en un perido de 24 horas
- * registradas cada hora.
+ * registradas cada hora, almacenadas en la EEPROM del ESP32
  * Monitorea el valor de la humedad del suelo de 3 secciones y si es mayor al valor deseado
  * indica que sección requiere recuperar la evapotranspiración calculada
  * Calcula la Temperatura minima, Temperatura MAXIMA y Temperatura Promedio
  * Calcula la EVAPOTRANSPIRACION del pasto que será necesaria recuperar con el riego
+ * Calcula la lamina de riego y tomando en cuenta el area a regar, determina el tiempo de 
+ * riego necesario para recuperar el agua perdida por la Evapotranspiración.
+ * La apertura y cierre de electrovalvulas, asi como el encendido de la bomba es controlado
+ * por el RELÉ
  * 
  * Por: Cristina Sánchez Saldaña
  *      Rogelio Vázquez Nieves
@@ -18,39 +22,51 @@
 #include <WiFiUdp.h>
 #include <DHT.h>
 #include "math.h"
+#include <EEPROM.h>
 
 // Replace with your network credentials
-const char* ssid     = "IZZI-8F7C";// //"GTYV"; "INFINITUM5853";
-const char* password = "C85261838F7C";  // //"V1ncul4cI0n*#2021"; "JKcuTY9G4C";
+const char* ssid     = "GTYV"; //"IZZI-8F7C"; //"GTYV"; //"ARRIS-8F7C"; //"INFINITUM5853";// //"GTYV"; //
+const char* password = "V1ncul4cI0n*#2021"; //"C85261838F7C"; //"V1ncul4cI0n*#2021"; // "C85261838F7C"; //"JKcuTY9G4C"; // //"V1ncul4cI0n*#2021"; //
 
-// Define NTP Client to get time
+// Define NTP Client para obtener la fecha/hora
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
 
-#define  DHTPIN  4           
-#define  DHTTYPE DHT21 
 
 //CONSTANTES
+#define EEPROM_SIZE 112
+#define  DHTPIN  4           
+#define  DHTTYPE DHT21 
+#define RELAY_ON 0   //define una constante de activacion de relé, los relés se activan con nivel BAJO (0)
+#define RELAY_OFF 1
+
+
 const float GSC = 0.082;                  //constante solar en  MJ/m  por min
-const float EFICIENCIA = 0.80;             //eficiencia de riego de acuerdo al diseño por aspersores
+const float EFICIENCIA = 0.80;             //eficiencia de riego de acuerdo al diseño hidraulico, en este caso es por aspersores conuna eficiencia del 80-85% de cobertura
 const int SENSORPIN_1 = 34;               //pin en el que se conectara la salida A0 del sensor de humedad de suelo ubicado en Seccion 1
 const int SENSORPIN_2 = 36;               //pin en el que se conectara la salida A0 del sensor de humedad de suelo ubicado en Seccion 2
 const int SENSORPIN_3 = 39;               //pin en el que se conectara la salida A0 del sensor de humedad de suelo ubicado en Seccion 3
 
 // Variables to save date and time
-String formattedDate;
-String dayStamp;
-String timeStamp;
+String formattedDate;                                                                    //almacena el formato de la fecha AAAA-MM-DDTHH:MM:SSz
+String dayStamp;                                                                         //almacena solo la fecha AAAA-MM-DD
+String timeStamp;                                                                         //almacena solo el tiempo HH:MM:SS
 int numero_de_dias;                                                                       //acumula los dias transcurridos por los meses completos
 int numero_dia;                                                                           // acumula los dias transcurridos del mes vigente
-int Total_dias_anyo;
-float hum_21, temp_21, temp_min, temp_max, avg_temp, sum_temp;  
+int Total_dias_anyo;                                                                      //almacena el total de dias transcurridos en el año a la fecha actual
+float hum_21, temp_21, temp_min, temp_max, avg_temp, sum_temp;                            //variables del sensor DHT21 (humedad, temperatura), temperaturas minima,mmaxima y promedio del dia
 float etc, eto, kc, ra, x, dr, ws, ds;                                                    //variables de la Evapotranspiración
 float lrb, lrb_m, g, area_de_riego, g_1, g_2, g_3, ga_1, ga_2, ga_3, ta_1, ta_2, ta_3;    //variables para el tiempo de riego
-bool riego1, riego2, riego3;
+bool riego1 = false, riego2 = false, riego3 = false, regado1 = false, regado2 = false, regado3 = false;                                                             //indica que seccion 1,2  o 3 requiere regarse, alhaber registrado una humedad por encima de la deseda (sequedad), se define float ya que almacenara en la EEPROM 
+int direccion;                                                                         //inicio de memoria EEPROM en 0
+int No_Lecturas_Temp = 24;                                                                 //cantidad de lecturas al dia del sensor de temperatura ambiental
+int i;                                                                                     //contador
+float valor;                                                                               //dato guardado en la direccion EEPROM
+bool registro = false;                                                                     //indica si la temperatura ya se registro o no en la hora actual
+
 
 //Arreglos
-float Temperaturas_DTH21[24];
+//float Temperaturas_DTH21[24];
 
 //Objects
 DHT dht(DHTPIN, DHTTYPE);
@@ -60,6 +76,9 @@ DHT dht(DHTPIN, DHTTYPE);
 void setup() {
   // Initialize Serial Monitor
   Serial.begin(115200);
+  
+  EEPROM.begin(EEPROM_SIZE);
+  direccion = 0;
   Serial.print("Connecting to ");
   Serial.println(ssid);
   WiFi.begin(ssid, password);
@@ -81,10 +100,21 @@ void setup() {
   // GMT -1 = -3600
   // GMT 0 = 0
   timeClient.setTimeOffset(-17990); //zona horaria de CDMX
-
+  
    Serial.println(F("DHTxx test!"));
    dht.begin();
- 
+   
+   //Asegurar nivel ALTO en cada entrada de rele
+   digitalWrite (25, RELAY_OFF); 
+   digitalWrite (26, RELAY_OFF); 
+   digitalWrite (27, RELAY_OFF);  
+   digitalWrite (33, RELAY_OFF);
+
+   //Definir los pines como salida
+   pinMode (25, OUTPUT);
+   pinMode (26, OUTPUT);
+   pinMode (27, OUTPUT);
+   pinMode (33, OUTPUT);
 }
 
 
@@ -93,11 +123,15 @@ void loop() {
   while(!timeClient.update()) {
     timeClient.forceUpdate();
   }
+  
+    Serial.println(riego1); 
+      Serial.println(riego2); 
+        Serial.println(riego3); 
+ 
   Fecha_Hora();  //Esta función muestra la Fecha y hora actual, llama a la función que calcula
                  // el numero de dias transcurridos y llama la función de registro de temperatura
                  // ambiental con periodos de 1 hora
-  
-
+ 
 }
 
 
@@ -112,7 +146,7 @@ String Fecha_Hora(){
   // Serial.println(formattedDate);   //imprime la fecha y hora mostrando el formato para extraer los datos
 
   // Extract year/month/date ie reformat the NTP String
-
+  //EEPROM.begin(EEPROM_SIZE);
   int splitY = formattedDate.indexOf("-");
   String year = formattedDate.substring(0, splitY);
   //Serial.print("Año: "); Serial.println(year);
@@ -127,7 +161,7 @@ String Fecha_Hora(){
   
   
   //Una vez que se tiene el mes, dia y año; se calcuala en numero de dia en el año
-  Calculo_dia(month,mydate);   //nos devuelve Total_dias_anyo
+  Calculo_dia(month, mydate);   //nos devuelve Total_dias_anyo
  
   // Extract date and hour; muestra la fecha AAAA-MM-DD 
   int splitT = formattedDate.indexOf("T");
@@ -144,7 +178,10 @@ String Fecha_Hora(){
   String hour = formattedDate.substring(11, 13);
   Serial.print("Horas: "); 
   Serial.println(hour);
-  int hr_int = hour.toInt();                                            //convertir el String "hour" a Entero "hr_int"
+  int hr_int = hour.toInt(); //convertir el String "hour" a Entero "hr_int" 
+  
+  
+  
   int splitMin = formattedDate.indexOf(":");
   String minu = formattedDate.substring(14, 16);
   Serial.print("Minutos: "); 
@@ -162,44 +199,129 @@ String Fecha_Hora(){
   Humedad_Sensor_2();
   Humedad_Sensor_3();
   delay(6000); //toma la temperatura ambiental cada 3 segundos
-  if (min_int == 0){
-       int posicion = (hr_int - 1);
-       Temperaturas_DTH21[posicion]= temp_21;                           //registra la lectura de la temperatura ambiental
-       Serial.print("Temperatura registrada ");
-       Serial.println(Temperaturas_DTH21[posicion]);
+  if ((min_int == 0) && (registro == false)){
+       EEPROM.put(direccion, temp_21);           //registra la lectura temp ambiental en la direccion de la EEPROM
+       delay(100);
+       EEPROM.commit();                           //cierra la operacion de escritura
+       Serial.print(EEPROM.get(direccion, valor));
+       Serial.print("Temperatura registrada en direccion ");
+       Serial.println(direccion);
+       direccion += sizeof(float);                //incrementa la direccion de memoria en los bytes necesarios que ocupo el float almacenado
        Serial.print(" a la hora ");
-       Serial.print(hr_int);
-     }
-  if ((hr_int == 18) && (riego1 == 1)){
-    //riega seccion 1
-     Calculo_TempmMp();                                                   //Esta función calcula la temperatura minima, maxima y promedio
-     Evapotranspiracion(Total_dias_anyo, temp_min, temp_max, avg_temp);  //devuelve la etc
-     Tiempo_de_Riego(EFICIENCIA, etc);                                    //devuelve el tiempo de reiego necesario en cada seccion en minutos
-     Serial.print("Tiempo de riego, Sección 1: ");
-     Serial.print(ta_1, 5);
-     Serial.println(" minutos");
-     Serial.print("Tiempo de riego, Sección 2: ");
-     Serial.print(ta_2, 5);
-     Serial.println(" minutos");
-     Serial.print("Tiempo de riego, Sección 3: ");
-     Serial.print(ta_3, 5);
-     Serial.println(" minutos");
-     int tiempo_riego_1 = ta_1 * 60000;                                   //calcula el tiempo en milisegundos que se mantendra la bomba y electrovalvula de la seccion 1 abierta
-     Serial.println ("regando seccion 1");
-     delay (2000);
-     if ((hr_int == 18) && (riego2 == 1)){
-        //riega seccion 2
-        int tiempo_riego_2 = ta_2 * 60000;                                   //calcula el tiempo en milisegundos que se mantendra la bomba y electrovalvula de la seccion 1 abierta
-        Serial.println ("regando seccion 2");
+       Serial.println(hr_int);
+       registro = true;                         //ya se registro la temperatura durante el minuto 0 de la hora actual
+       
+       if (hr_int == 0){
+        direccion = 0;
+       
+         }
+       if ((min_int > 1) && (registro == true)){
+           registro = false;
+           //direccion += sizeof(float);                //incrementa la direccion de memoria en los bytes necesarios que ocupo el float almacenado
+       }   
+
+  
+  Serial.print("Necesita riego seccion 1: ");
+  Serial.println(riego1); 
+  Serial.print("Necesita riego seccion 2: ");
+  Serial.println(riego2);
+  Serial.print("Necesita riego seccion 3: ");
+  Serial.println(riego3);   
+  if (hr_int == 13) {
+    if ((regado1 == false) && (riego1 == true)){
+     
+        Calculo_TempmMp();                                                   //Esta función calcula la temperatura minima, maxima y promedio
+        Evapotranspiracion(Total_dias_anyo, temp_min, temp_max, avg_temp);  //devuelve la etc
+        Tiempo_de_Riego(EFICIENCIA, etc);                                    //devuelve el tiempo de reiego necesario en cada seccion en minutos
+        Serial.print("Tiempo de riego, Sección 1: ");
+        Serial.print(ta_1, 5);
+        Serial.println(" minutos");
+        Serial.print("Tiempo de riego, Sección 2: ");
+        Serial.print(ta_2, 5);
+        Serial.println(" minutos");
+        Serial.print("Tiempo de riego, Sección 3: ");
+        Serial.print(ta_3, 5);
+        Serial.println(" minutos");
+
+        //riega seccion 1
+        //falta comprobar nuevamente si sigue con falta de agua
+        int tiempo_riego_1 = ta_1 * 60000;                                   //calcula el tiempo en milisegundos que se mantendra la bomba y electrovalvula de la seccion 1 abierta
+        Serial.print("regando seccion 1...Esto tomará (riego prioritario):");
+        Serial.print(tiempo_riego_1);
+        Serial.println(" minutos");
+        digitalWrite (26, RELAY_ON);     //Activa relé 2, que abre la ELECTROVALVULA 1
+        digitalWrite (25, RELAY_ON);     //Activa relé 1, que enciende la BOMBA
         delay (2000);
-        if ((hr_int == 18) && (riego3 == 1)){
-           //riega seccion 3 
-           int tiempo_riego_3 = ta_3 * 60000;                                   //calcula el tiempo en milisegundos que se mantendra la bomba y electrovalvula de la seccion 1 abierta
-           Serial.println ("regando seccion 3");
-           delay (2000);
-        }   
+        //delay(Tiempo_riego_1);
+        digitalWrite (25, RELAY_OFF);    //Desactiva relé 1, apaga la BOMBA
+        digitalWrite (26, RELAY_OFF);    //Desactiva relé 2, cierra la ELECTROVALVULA 1
+        regado1 = true;
+      
     }
-  }
+    else {
+         if ((regado2 == false) &&(riego2 == true)){
+            //riega seccion 2
+            int tiempo_riego_2 = ta_2 * 60000;                                   //calcula el tiempo en milisegundos que se mantendra la bomba y electrovalvula de la seccion 1 abierta
+            Serial.print("regando seccion 2...Esto tomará (riego prioritario):");
+            Serial.print(tiempo_riego_2);
+            Serial.println(" minutos");
+            digitalWrite (27, RELAY_ON);     //Activa relé 3, que abre la ELECTROVALVULA 2
+            digitalWrite (25, RELAY_ON);     //Activa relé 1, que enciende la BOMBA
+            delay (2000);
+            //delay(Tiempo_riego_2);
+            digitalWrite (25, RELAY_OFF);    //Desactiva relé 1, apaga la BOMBA
+            digitalWrite (27, RELAY_OFF);    //Desactiva relé 3, cierra la ELECTROVALVULA 2
+            regado2 = true;
+        
+         }
+         else{
+              if ((regado3 == false) && (riego3 == true)){
+                 //riega seccion 3 
+                 int tiempo_riego_3 = ta_3 * 60000;                                   //calcula el tiempo en milisegundos que se mantendra la bomba y electrovalvula de la seccion 1 abierta
+                 Serial.print("regando seccion 3...Esto tomará (riego prioritario):");
+                 Serial.print(tiempo_riego_3);
+                 Serial.println(" minutos");
+                 digitalWrite (33, RELAY_ON);     //Activa relé 4, que abre la ELECTROVALVULA 3
+                 digitalWrite (25, RELAY_ON);     //Activa relé 1, que enciende la BOMBA
+                 delay (2000);
+                 //delay(Tiempo_riego_3);
+                 digitalWrite (25, RELAY_OFF);    //Desactiva relé 1, apaga la BOMBA
+                 digitalWrite (33, RELAY_OFF);    //Desactiva relé 4, cierra la ELECTROVALVULA 3
+                 regado3 = true;
+                 }  
+               else { //recuperara a evapotranspiracion sin prioridad
+                 digitalWrite (26, RELAY_ON);     //Activa relé 2, que abre la ELECTROVALVULA 1
+                 digitalWrite (25, RELAY_ON);     //Activa relé 1, que enciende la BOMBA
+                 delay (2000);
+                 //delay(Tiempo_riego_1);
+                 digitalWrite (27, RELAY_ON);     //Activa relé 3, que abre la ELECTROVALVULA 2
+                 digitalWrite (26, RELAY_OFF);    //Desactiva relé 2, cierra la ELECTROVALVULA 1   
+                 delay (2000);
+                //delay(Tiempo_riego_2);
+                digitalWrite (33, RELAY_ON);     //Activa relé 4, que abre la ELECTROVALVULA 3
+                digitalWrite (27, RELAY_OFF);    //Desactiva relé 3, cierra la ELECTROVALVULA 2
+                delay (2000);
+                 //delay(Tiempo_riego_3);
+                 digitalWrite (25, RELAY_OFF);    //Desactiva relé 1, apaga la BOMBA
+                 digitalWrite (33, RELAY_OFF);    //Desactiva relé 4, cierra la ELECTROVALVULA 3
+                 riego1 = false;
+                 riego2 = false;
+                 riego3 = false;
+                 regado1 = true; regado2 = true;regado3 = true;
+               }
+              }
+        }
+    if ((min_int > 1) && (regado1 == true)&& (regado2 == true)&& (regado3 == true)){
+           riego1 = false;
+           riego2 = false;
+           riego3 = false;
+           regado1 = false;
+           regado2 = false;
+           regado3 = false;
+           
+       }  
+  }       
+}
 }
 
 
@@ -227,13 +349,13 @@ float Toma_Temperatura(int hr_int, int min_int){
 //************************************************************************************
 //Lectura de humedad de suelo SECCION 1
 bool Humedad_Sensor_1(){
+   //EEPROM.begin(EEPROM_SIZE);
    int humedad_1 = analogRead(SENSORPIN_1);
    Serial.println("Sensor 1:");
    Serial.println(humedad_1);
-   if (humedad_1 > 2000){
+   if (humedad_1 > 2700){
     Serial.println("requiere riego la seccion 1...");
-    bool riego1 = 1;
-    return riego1;
+    return riego1 = true;
    }
    
  }
@@ -241,26 +363,26 @@ bool Humedad_Sensor_1(){
 //************************************************************************************
 //Lectura de humedad de suelo SECCION 2
 bool Humedad_Sensor_2(){
+   //EEPROM.begin(EEPROM_SIZE);
    int humedad_2 = analogRead(SENSORPIN_2);
    Serial.println("Sensor 2:");
    Serial.println(humedad_2);
-   if (humedad_2 > 2000){
+   if (humedad_2 > 2700){
     Serial.println("requiere riego la seccion 2...");
-    bool riego2 = 1;
-    return riego2;
+    return riego2 = true;
    }
  }
  
 //************************************************************************************
 //Lectura de humedad de suelo SECCION 3
 bool Humedad_Sensor_3(){
+   //EEPROM.begin(EEPROM_SIZE);
    int humedad_3 = analogRead(SENSORPIN_3);
    Serial.println("Sensor 3:");
    Serial.println(humedad_3);
-   if (humedad_3 > 2000){
+   if (humedad_3 > 2700){
     Serial.println("requiere riego la seccion 3...");
-    bool riego3 = 1;
-    return riego3;
+    return riego3 = true;
    }
  }
 
@@ -270,11 +392,17 @@ bool Humedad_Sensor_3(){
 //********************************************************************************************
 float Calculo_TempmMp(){
   //Leer lecturas de temperatura, calcular temperatura minima, maxima y promedio
+  int aux_direccion = direccion;
   
-  temp_min = Temperaturas_DTH21[0];
-  temp_max = Temperaturas_DTH21[0];
+  direccion = 0;
+  EEPROM.begin(EEPROM_SIZE);
+  temp_min = EEPROM.get(direccion, valor);
+  temp_max = EEPROM.get(direccion, valor);
+  sum_temp = (EEPROM.get(direccion, valor));
   for(int j = 1; j<24; j++){
-   float auxiliar = Temperaturas_DTH21[j];
+   direccion += sizeof(float);  
+   float auxiliar =  EEPROM.get(direccion, valor);
+   sum_temp = sum_temp + auxiliar;
    if (auxiliar < temp_min){
     temp_min = auxiliar;
    }
@@ -284,12 +412,14 @@ float Calculo_TempmMp(){
     }
    }
   }
-   sum_temp = 0;
+   
    Serial.println("Valores registrados de temperatura durante el día:");
+   direccion = 0;
    for(int j = 0; j<24; j++){
-   Serial.print(Temperaturas_DTH21[j]);
-   Serial.print(" ");
-   sum_temp = sum_temp + Temperaturas_DTH21[j];
+       
+       Serial.print(EEPROM.get(direccion, valor));
+       Serial.print(" ");
+       direccion += sizeof(float); 
    }
    
    Serial.println();
@@ -300,9 +430,11 @@ float Calculo_TempmMp(){
    Serial.println(temp_max);
    Serial.print("Temperatura Promedio (°C): ");
    Serial.println(avg_temp);
+   direccion = aux_direccion + sizeof(float);
    return temp_min;
    return temp_max;
    return avg_temp;
+   return direccion;
 }
 
 
@@ -395,7 +527,7 @@ float Evapotranspiracion(int Total_dias_anyo, float temp_min, float temp_max, fl
   float aux_2 = (((aux_1-1.39) * PI) / 180);
   
   float ds = 0.409 *(sin(aux_2));*/
-   
+   Serial.print(Total_dias_anyo);
    ds = 0.409 *(sin((((2*PI)/365)* Total_dias_anyo)-1.39));
   Serial.print("Declinación Solar: ");
   Serial.print(ds, 5);
@@ -405,7 +537,7 @@ float Evapotranspiracion(int Total_dias_anyo, float temp_min, float temp_max, fl
   la zona esta ubicada a 20° 27' 08" latitud norte
   equivalente a 20.45 grados decimales y 0.3570 radianes
 */
-  x= 1- ((tan(0.3570)*tan(0.3570))*(tan(ds)*tan(ds)));
+  x= 1 - ((tan(0.3570)*tan(0.3570))*(tan(ds)*tan(ds)));
  /* ws = (PI/2) - atan((-tan(0.3570)*tan(ds))/sqrt(x));
  //la tan() da radianes, debemos convertir a decimal
   float aux_4 = ((-tan(0.3570)*tan(ds))* (180 / PI));
@@ -460,11 +592,11 @@ int Tiempo_de_Riego(float EFICIENCIA, float etc){
   Serial.println(etc, 5);
   
   
-  lrb = ((etc / EFICIENCIA) * 100); // mm  de agua
+  lrb = (etc / EFICIENCIA); // mm  de agua
   lrb_m = (lrb / 1000);           // m de agua    
   Serial.print("Lámina de Riego Requerida: ");
   Serial.print(lrb_m, 5);
-  Serial.println(" m de agua");
+  Serial.println(" m3 de agua");
 
   //con la lrb en metros, se puede obtene el volumen de agua por área, G
   //g = lbr_m  * area_de_riego      m3 de agua requeridos
