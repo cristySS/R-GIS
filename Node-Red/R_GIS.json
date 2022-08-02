@@ -1,0 +1,1180 @@
+[
+    {
+        "id": "cd595f468c67216c",
+        "type": "tab",
+        "label": "R_GIS",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "04774eb9103b238d",
+        "type": "mqtt in",
+        "z": "cd595f468c67216c",
+        "name": "",
+        "topic": "CodigoIoT/G6/r-gis",
+        "qos": "2",
+        "datatype": "auto",
+        "broker": "9ebedd0295e0c7ad",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 90,
+        "y": 380,
+        "wires": [
+            [
+                "d924c72f8f144f50"
+            ]
+        ]
+    },
+    {
+        "id": "d924c72f8f144f50",
+        "type": "json",
+        "z": "cd595f468c67216c",
+        "name": "",
+        "property": "payload",
+        "action": "obj",
+        "pretty": false,
+        "x": 270,
+        "y": 380,
+        "wires": [
+            [
+                "49dadab9aef62c54",
+                "338aa9b3a808d892",
+                "d7129cb3528117e0",
+                "1bb50af80f6e7e7d",
+                "a94ce8cf019e6201",
+                "6abf2d799b9ef6e2",
+                "cccc810816a77483",
+                "91cda3cedeb6c986"
+            ]
+        ]
+    },
+    {
+        "id": "49dadab9aef62c54",
+        "type": "function",
+        "z": "cd595f468c67216c",
+        "name": "Hum_1",
+        "func": "global.set (\"H1\", msg.payload.H1);\nmsg.payload=msg.payload.H1;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 100,
+        "wires": [
+            [
+                "99e96cbcde0a431b",
+                "b4316e2f77302449"
+            ]
+        ]
+    },
+    {
+        "id": "338aa9b3a808d892",
+        "type": "function",
+        "z": "cd595f468c67216c",
+        "name": "Hum_2",
+        "func": "global.set (\"H2\", msg.payload.H2);\nmsg.payload=msg.payload.H2;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 180,
+        "wires": [
+            [
+                "f5e00fa1ea865b8a"
+            ]
+        ]
+    },
+    {
+        "id": "d7129cb3528117e0",
+        "type": "function",
+        "z": "cd595f468c67216c",
+        "name": "Hum_3",
+        "func": "global.set (\"H3\", msg.payload.H3);\nmsg.payload = msg.payload.H3;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 260,
+        "wires": [
+            [
+                "8571a886a8f2fe83"
+            ]
+        ]
+    },
+    {
+        "id": "99e96cbcde0a431b",
+        "type": "debug",
+        "z": "cd595f468c67216c",
+        "name": "",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 610,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "1bb50af80f6e7e7d",
+        "type": "function",
+        "z": "cd595f468c67216c",
+        "name": "Temp",
+        "func": "global.set (\"Temp\", msg.payload.Temp);\nmsg.payload = msg.payload.Temp;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 340,
+        "wires": [
+            [
+                "4964a091f7f14239",
+                "dee9cd841ab108dc"
+            ]
+        ]
+    },
+    {
+        "id": "a94ce8cf019e6201",
+        "type": "function",
+        "z": "cd595f468c67216c",
+        "name": "Valv_1",
+        "func": "global.set (\"V1\", msg.payload.V1);\nmsg.payload=msg.payload.V1;\nif (msg.payload.V1==0) { \n    S_V1=0;\n}\nelse {\n    S_V1=1;\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 420,
+        "wires": [
+            [
+                "178aefb89ba1c90b",
+                "ab8b0598791121a1"
+            ]
+        ]
+    },
+    {
+        "id": "6abf2d799b9ef6e2",
+        "type": "function",
+        "z": "cd595f468c67216c",
+        "name": "Valv_2",
+        "func": "global.set (\"V2\", msg.payload.V2);\nmsg.payload=msg.payload.V2;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 500,
+        "wires": [
+            [
+                "f761bc478dc63e8f"
+            ]
+        ]
+    },
+    {
+        "id": "cccc810816a77483",
+        "type": "function",
+        "z": "cd595f468c67216c",
+        "name": "Valv_3",
+        "func": "global.set (\"V3\", msg.payload.V3);\nmsg.payload = msg.payload.V3;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 580,
+        "wires": [
+            [
+                "26f333efef96b2c3"
+            ]
+        ]
+    },
+    {
+        "id": "178aefb89ba1c90b",
+        "type": "debug",
+        "z": "cd595f468c67216c",
+        "name": "",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 610,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "91cda3cedeb6c986",
+        "type": "function",
+        "z": "cd595f468c67216c",
+        "name": "Motor",
+        "func": "global.set (\"Motor\", msg.payload.Motor);\nmsg.payload = msg.payload.Motor;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 660,
+        "wires": [
+            [
+                "4acda3d830636b0c"
+            ]
+        ]
+    },
+    {
+        "id": "ab8b0598791121a1",
+        "type": "ui_text",
+        "z": "cd595f468c67216c",
+        "group": "640115dc75f5612d",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Valvula 1:",
+        "format": "{{msg.payload}}",
+        "layout": "col-center",
+        "x": 600,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "f761bc478dc63e8f",
+        "type": "ui_text",
+        "z": "cd595f468c67216c",
+        "group": "640115dc75f5612d",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Valvula 2:",
+        "format": "{{msg.payload}}",
+        "layout": "col-center",
+        "x": 600,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "26f333efef96b2c3",
+        "type": "ui_text",
+        "z": "cd595f468c67216c",
+        "group": "640115dc75f5612d",
+        "order": 5,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Valvula 3:",
+        "format": "{{msg.payload}}",
+        "layout": "col-center",
+        "x": 600,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "4acda3d830636b0c",
+        "type": "ui_text",
+        "z": "cd595f468c67216c",
+        "group": "640115dc75f5612d",
+        "order": 7,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Motor",
+        "format": "{{msg.payload}}",
+        "layout": "col-center",
+        "x": 590,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "b4316e2f77302449",
+        "type": "ui_gauge",
+        "z": "cd595f468c67216c",
+        "name": "H1",
+        "group": "d18aaa15b2dc6ba2",
+        "order": 1,
+        "width": 5,
+        "height": 5,
+        "gtype": "gage",
+        "title": "Humedad_1",
+        "label": "units",
+        "format": "{{value}}",
+        "min": "500",
+        "max": "5000",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "1000",
+        "seg2": "3000",
+        "x": 610,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "f5e00fa1ea865b8a",
+        "type": "ui_gauge",
+        "z": "cd595f468c67216c",
+        "name": "H2",
+        "group": "d18aaa15b2dc6ba2",
+        "order": 2,
+        "width": 5,
+        "height": 5,
+        "gtype": "gage",
+        "title": "Humedad_2",
+        "label": "units",
+        "format": "{{value}}",
+        "min": "500",
+        "max": "5000",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "1000",
+        "seg2": "3000",
+        "x": 590,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "8571a886a8f2fe83",
+        "type": "ui_gauge",
+        "z": "cd595f468c67216c",
+        "name": "H3",
+        "group": "d18aaa15b2dc6ba2",
+        "order": 3,
+        "width": 5,
+        "height": 5,
+        "gtype": "gage",
+        "title": "Humedad_3",
+        "label": "units",
+        "format": "{{value}}",
+        "min": "500",
+        "max": "5000",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "1000",
+        "seg2": "3000",
+        "x": 590,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "4964a091f7f14239",
+        "type": "ui_gauge",
+        "z": "cd595f468c67216c",
+        "name": "T1",
+        "group": "d18aaa15b2dc6ba2",
+        "order": 4,
+        "width": 5,
+        "height": 5,
+        "gtype": "gage",
+        "title": "Temperatura",
+        "label": "units",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "40",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "20",
+        "seg2": "30",
+        "x": 590,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "1a12ec4f80cd8903",
+        "type": "ui_switch",
+        "z": "cd595f468c67216c",
+        "d": true,
+        "name": "",
+        "label": "Apagar todo (Manual)",
+        "tooltip": "",
+        "group": "41716c563ba62c91",
+        "order": 10,
+        "width": 0,
+        "height": 0,
+        "passthru": true,
+        "decouple": "false",
+        "topic": "topic",
+        "topicType": "msg",
+        "style": "",
+        "onvalue": "true",
+        "onvalueType": "bool",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "false",
+        "offvalueType": "bool",
+        "officon": "",
+        "offcolor": "",
+        "animate": false,
+        "x": 180,
+        "y": 760,
+        "wires": [
+            [
+                "c356c9f0a07b7710"
+            ]
+        ]
+    },
+    {
+        "id": "c356c9f0a07b7710",
+        "type": "mqtt out",
+        "z": "cd595f468c67216c",
+        "d": true,
+        "name": "",
+        "topic": "esp32/output",
+        "qos": "2",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "9ebedd0295e0c7ad",
+        "x": 450,
+        "y": 760,
+        "wires": []
+    },
+    {
+        "id": "dee9cd841ab108dc",
+        "type": "ui_chart",
+        "z": "cd595f468c67216c",
+        "name": "",
+        "group": "d18aaa15b2dc6ba2",
+        "order": 5,
+        "width": 0,
+        "height": 0,
+        "label": "Grafica Temp. X Hora",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "-5",
+        "ymax": "35",
+        "removeOlder": "24",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "x": 770,
+        "y": 320,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "1968bdacfdc50ccf",
+        "type": "inject",
+        "z": "cd595f468c67216c",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payloadType": "date",
+        "x": 150,
+        "y": 920,
+        "wires": [
+            [
+                "0da1d3c44e9b35e5"
+            ]
+        ]
+    },
+    {
+        "id": "dd923ca6530a5e0d",
+        "type": "template",
+        "z": "cd595f468c67216c",
+        "name": "Image in",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "<img src=\"data:image/png;base64,{{payload}}\"style=\"width=\"235\" height=\"530\"\"/>",
+        "output": "str",
+        "x": 360,
+        "y": 1000,
+        "wires": [
+            [
+                "6819fe61279d0c01"
+            ]
+        ]
+    },
+    {
+        "id": "6819fe61279d0c01",
+        "type": "ui_template",
+        "z": "cd595f468c67216c",
+        "group": "dfb551eccf166e4b",
+        "name": "R-GIS Logo",
+        "order": 1,
+        "width": "5",
+        "height": 10,
+        "format": "<div ng-bind-html=\"msg.payload\"></div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "x": 570,
+        "y": 1000,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "0da1d3c44e9b35e5",
+        "type": "file in",
+        "z": "cd595f468c67216c",
+        "name": "",
+        "filename": "/home/roger/Documents/GitHub/R-GIS-1/Imagenes/r_gisV.jpg",
+        "format": "",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 480,
+        "y": 920,
+        "wires": [
+            [
+                "76d6b8b892a461af"
+            ]
+        ]
+    },
+    {
+        "id": "c87997d5b0656595",
+        "type": "comment",
+        "z": "cd595f468c67216c",
+        "name": "On inject add the R-GIS logo to the dashboard",
+        "info": "",
+        "x": 230,
+        "y": 860,
+        "wires": []
+    },
+    {
+        "id": "76d6b8b892a461af",
+        "type": "base64",
+        "z": "cd595f468c67216c",
+        "name": "",
+        "action": "",
+        "property": "payload",
+        "x": 840,
+        "y": 920,
+        "wires": [
+            [
+                "dd923ca6530a5e0d"
+            ]
+        ]
+    },
+    {
+        "id": "ff606cc14f733202",
+        "type": "ui_switch",
+        "z": "cd595f468c67216c",
+        "name": "",
+        "label": "Apagar Todo",
+        "tooltip": "",
+        "group": "41716c563ba62c91",
+        "order": 1,
+        "width": 3,
+        "height": 2,
+        "passthru": true,
+        "decouple": "false",
+        "topic": "s1",
+        "topicType": "str",
+        "style": "",
+        "onvalue": "1",
+        "onvalueType": "num",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "0",
+        "offvalueType": "num",
+        "officon": "",
+        "offcolor": "",
+        "animate": true,
+        "x": 150,
+        "y": 1200,
+        "wires": [
+            [
+                "5cfa1060d3ccae7e"
+            ]
+        ]
+    },
+    {
+        "id": "ac3448fef976f6ca",
+        "type": "ui_switch",
+        "z": "cd595f468c67216c",
+        "name": "S_V1",
+        "label": "Valvula1",
+        "tooltip": "",
+        "group": "41716c563ba62c91",
+        "order": 3,
+        "width": 3,
+        "height": 2,
+        "passthru": false,
+        "decouple": "true",
+        "topic": "s2",
+        "topicType": "str",
+        "style": "",
+        "onvalue": "1",
+        "onvalueType": "num",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "0",
+        "offvalueType": "num",
+        "officon": "",
+        "offcolor": "",
+        "animate": true,
+        "x": 430,
+        "y": 1360,
+        "wires": [
+            [
+                "5cfa1060d3ccae7e"
+            ]
+        ]
+    },
+    {
+        "id": "dd9d53760fa34946",
+        "type": "function",
+        "z": "cd595f468c67216c",
+        "name": "Couleur",
+        "func": "\nglobal.set(\"Ppal\",msg.payload);\nif (msg.topic==\"init\") //not real value\n{\n    var newmsg={};\n     newmsg.payload= \"black\" ;\n\treturn newmsg;\n\n}\n\nif(msg.payload == '1' || msg.payload==1 || msg.payload)\n{\n\tvar newmsg = {\n    payload: \"lime\" \n\t};\n\treturn newmsg;\n}\nelse if(msg.payload =='0' || msg.payload==0 || !msg.payload)\n{\n\tvar newmsg = {\n    payload: \"red\" \n\t};\n\treturn newmsg;\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 800,
+        "y": 1060,
+        "wires": [
+            [
+                "ecd95ee38d235a62"
+            ]
+        ]
+    },
+    {
+        "id": "ecd95ee38d235a62",
+        "type": "ui_template",
+        "z": "cd595f468c67216c",
+        "group": "41716c563ba62c91",
+        "name": " Status 1",
+        "order": 2,
+        "width": 9,
+        "height": 2,
+        "format": "<div style=\"display:flex; overflow: hidden;tex-align:left\"><p> Status Main &nbsp;\n<svg height=\"40\" width=\"80\">\n<circle cx=\"30\" cy=\"30\" r=\"10\"  style=\"stroke: none; fill: {{msg.payload}};\"/>\n</svg></p>\n\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "x": 960,
+        "y": 1060,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a32e9c444a3d3830",
+        "type": "ui_switch",
+        "z": "cd595f468c67216c",
+        "name": "",
+        "label": "switch3",
+        "tooltip": "",
+        "group": "41716c563ba62c91",
+        "order": 5,
+        "width": 3,
+        "height": 2,
+        "passthru": false,
+        "decouple": "true",
+        "topic": "s3",
+        "topicType": "str",
+        "style": "",
+        "onvalue": "1",
+        "onvalueType": "num",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "0",
+        "offvalueType": "num",
+        "officon": "",
+        "offcolor": "",
+        "animate": true,
+        "x": 300,
+        "y": 1360,
+        "wires": [
+            [
+                "5cfa1060d3ccae7e"
+            ]
+        ]
+    },
+    {
+        "id": "9506336d90d49772",
+        "type": "inject",
+        "z": "cd595f468c67216c",
+        "name": "",
+        "props": [
+            {
+                "p": "payload",
+                "v": "0",
+                "vt": "num"
+            },
+            {
+                "p": "topic",
+                "v": "",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "0.5",
+        "topic": "",
+        "payload": "0",
+        "payloadType": "num",
+        "x": 130,
+        "y": 1140,
+        "wires": [
+            [
+                "ff606cc14f733202"
+            ]
+        ]
+    },
+    {
+        "id": "5cfa1060d3ccae7e",
+        "type": "function",
+        "z": "cd595f468c67216c",
+        "name": "",
+        "func": "var s1=context.get('s1');\nvar s2=context.get('s2');\nvar s3=context.get('s3');\nvar s4=context.get('s4');\nvar m=0;\n\nif (s1 ==undefined || s2 ==undefined || s3 ==undefined || s4 == undefined)\n{\n    s1=0;\n    s2=0;\n    s3=0;\n    s4=0;\n    m=0;\n}\n\nvar topic=msg.topic;\nvar payload=msg.payload;\nvar msg1={}; //switch 1 state  Principal\nvar msg2={}; //switch 2 state Valvula 1\nvar msg3={}; //switch 3 state Valvula 2\nvar msg4={}; //switch 4 state Valvula 3\nvar msg5={}; //Motor\n\nif (topic== \"s1\")\n{\n\ns1=payload;\n}\n\nif(s1==0)\n{\n\ns2=0;\ns3=0;\ns4=0;\nm=0;\n\nmsg1.payload=s1;\nmsg2.payload=s2;\nmsg3.payload=s3;\nmsg4.payload=s4;\nmsg5.payload=m;\n\ncontext.set('s1',s1);\ncontext.set('s2',s2);\ncontext.set('s3',s3);\ncontext.set('s4',s4);\n\nreturn[msg1,msg2,msg3,msg4,msg5];\n}\n\n\n\nif(topic==\"s2\")\n{\n    if (s3==0 && s4==0)\n    {\n        s2=payload;\n        m=s2;\n    }\n    else\n    {\n        s2=0;\n        m=0;\n    }\n\n}\n\nif(topic==\"s3\")\n{\n    if (s2==0 && s4==0)\n    {\n        s3=payload;\n        m=s3;\n\n    }\n    else\n    {\n      s3=0;\n      m=0;\n    }\n\n}\n\nif(topic==\"s4\")\n{\n    if (s2==0 && s3==0)\n    {\n        s4=payload;\n        m=s4;\n    }\n    else\n    {\n      s4=0;\n      m=0;\n    }\n\n}\ncontext.set('s1',s1);  \ncontext.set('s2',s2);  \ncontext.set('s3',s3);\ncontext.set('s4',s4);\n\nmsg1.payload=s1;\nmsg2.payload=s2;\nmsg3.payload=s3;\nmsg4.payload=s4;\nmsg5.payload=m;\nreturn[msg1,msg2,msg3,msg4,msg5];",
+        "outputs": 5,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 1140,
+        "wires": [
+            [
+                "dd9d53760fa34946"
+            ],
+            [
+                "5b9c24233fc9cefc",
+                "ac3448fef976f6ca"
+            ],
+            [
+                "fb0f2490f0d4b48b",
+                "a32e9c444a3d3830"
+            ],
+            [
+                "338ca40f40e0c5da",
+                "d7f8edb8e0c802a0"
+            ],
+            [
+                "a9cc46b44c61171b"
+            ]
+        ]
+    },
+    {
+        "id": "5b9c24233fc9cefc",
+        "type": "function",
+        "z": "cd595f468c67216c",
+        "name": "Couleur",
+        "func": "\nglobal.set(\"V1\",msg.payload);\nif (msg.topic==\"init\") //not real value\n{\n    var newmsg={};\n     newmsg.payload= \"black\" ;\n\treturn newmsg;\n\n}\n\nif(msg.payload == '1' || msg.payload==1 || msg.payload)\n{\n\tvar newmsg = {\n    payload: \"lime\" \n\t};\n\treturn newmsg;\n}\nelse if(msg.payload =='0' || msg.payload==0 || !msg.payload)\n{\n\tvar newmsg = {\n    payload: \"red\" \n\t};\n\treturn newmsg;\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 800,
+        "y": 1120,
+        "wires": [
+            [
+                "d4495c2c3a4ddee1"
+            ]
+        ]
+    },
+    {
+        "id": "d4495c2c3a4ddee1",
+        "type": "ui_template",
+        "z": "cd595f468c67216c",
+        "group": "41716c563ba62c91",
+        "name": " Status 2",
+        "order": 4,
+        "width": 9,
+        "height": 2,
+        "format": "<div style=\"display:flex; overflow: hidden;tex-align:left\"><p> Status V1 &nbsp;\n<svg height=\"40\" width=\"80\">\n<circle cx=\"30\" cy=\"30\" r=\"10\"  style=\"stroke: none; fill: {{msg.payload}};\"/>\n</svg></p>\n\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "x": 960,
+        "y": 1120,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "fb0f2490f0d4b48b",
+        "type": "function",
+        "z": "cd595f468c67216c",
+        "name": "Couleur",
+        "func": "\nglobal.set(\"V2\",msg.payload);\nif (msg.topic==\"init\") //not real value\n{\n    var newmsg={};\n     newmsg.payload= \"black\" ;\n\treturn newmsg;\n\n}\n\nif(msg.payload == '1' || msg.payload==1 || msg.payload)\n{\n\tvar newmsg = {\n    payload: \"lime\" \n\t};\n\treturn newmsg;\n}\nelse if(msg.payload =='0' || msg.payload==0 || !msg.payload)\n{\n\tvar newmsg = {\n    payload: \"red\" \n\t};\n\treturn newmsg;\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 800,
+        "y": 1180,
+        "wires": [
+            [
+                "3ce7a69bed94d61d"
+            ]
+        ]
+    },
+    {
+        "id": "3ce7a69bed94d61d",
+        "type": "ui_template",
+        "z": "cd595f468c67216c",
+        "group": "41716c563ba62c91",
+        "name": " Status 3",
+        "order": 6,
+        "width": 9,
+        "height": 2,
+        "format": "<div style=\"display:flex; overflow: hidden;tex-align:left\"><p> Status V2 &nbsp;\n<svg height=\"40\" width=\"80\">\n<circle cx=\"30\" cy=\"30\" r=\"10\"  style=\"stroke: none; fill: {{msg.payload}};\"/>\n</svg></p>\n\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "x": 960,
+        "y": 1180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "338ca40f40e0c5da",
+        "type": "function",
+        "z": "cd595f468c67216c",
+        "name": "Couleur",
+        "func": "\nglobal.set(\"V3\",msg.payload);\nif (msg.topic==\"init\") //not real value\n{\n    var newmsg={};\n     newmsg.payload= \"black\" ;\n\treturn newmsg;\n\n}\n\nif(msg.payload == '1' || msg.payload==1 || msg.payload)\n{\n\tvar newmsg = {\n    payload: \"lime\" \n\t};\n\treturn newmsg;\n}\nelse if(msg.payload =='0' || msg.payload==0 || !msg.payload)\n{\n\tvar newmsg = {\n    payload: \"red\" \n\t};\n\treturn newmsg;\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 800,
+        "y": 1240,
+        "wires": [
+            [
+                "c0e8b6a2660526d6"
+            ]
+        ]
+    },
+    {
+        "id": "c0e8b6a2660526d6",
+        "type": "ui_template",
+        "z": "cd595f468c67216c",
+        "group": "41716c563ba62c91",
+        "name": " Status 4",
+        "order": 8,
+        "width": 9,
+        "height": 2,
+        "format": "<div style=\"display:flex; overflow: hidden;tex-align:left\"><p> Light Status V3&nbsp;\n<svg height=\"40\" width=\"80\">\n<circle cx=\"30\" cy=\"30\" r=\"10\"  style=\"stroke: none; fill: {{msg.payload}};\"/>\n</svg></p>\n\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "x": 960,
+        "y": 1240,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "d7f8edb8e0c802a0",
+        "type": "ui_switch",
+        "z": "cd595f468c67216c",
+        "name": "",
+        "label": "switch4",
+        "tooltip": "",
+        "group": "41716c563ba62c91",
+        "order": 7,
+        "width": 3,
+        "height": 2,
+        "passthru": false,
+        "decouple": "true",
+        "topic": "s4",
+        "topicType": "str",
+        "style": "",
+        "onvalue": "1",
+        "onvalueType": "num",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "0",
+        "offvalueType": "num",
+        "officon": "",
+        "offcolor": "",
+        "animate": true,
+        "x": 140,
+        "y": 1360,
+        "wires": [
+            [
+                "5cfa1060d3ccae7e"
+            ]
+        ]
+    },
+    {
+        "id": "ca8b572167d5b91d",
+        "type": "ui_template",
+        "z": "cd595f468c67216c",
+        "group": "41716c563ba62c91",
+        "name": "Switch 1 Status",
+        "order": 9,
+        "width": 9,
+        "height": 2,
+        "format": "<div style=\"display:flex; overflow: hidden;tex-align:left\"><p> Light Status &nbsp;\n<svg height=\"40\" width=\"80\">\n<circle cx=\"30\" cy=\"30\" r=\"10\"  style=\"stroke: none; fill: {{msg.payload}};\"/>\n</svg></p>\n\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "x": 940,
+        "y": 1340,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a9cc46b44c61171b",
+        "type": "function",
+        "z": "cd595f468c67216c",
+        "name": "Couleur",
+        "func": "\nglobal.set(\"Motor\",msg.payload);\nif (msg.topic==\"init\") //not real value\n{\n    var newmsg={};\n     newmsg.payload= \"black\" ;\n\treturn newmsg;\n\n}\n\nif(msg.payload == '1' || msg.payload==1 || msg.payload)\n{\n\tvar newmsg = {\n    payload: \"lime\" \n\t};\n\treturn newmsg;\n}\nelse if(msg.payload =='0' || msg.payload==0 || !msg.payload)\n{\n\tvar newmsg = {\n    payload: \"red\" \n\t};\n\treturn newmsg;\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 1340,
+        "wires": [
+            [
+                "ca8b572167d5b91d"
+            ]
+        ]
+    },
+    {
+        "id": "5f75143fce72f6ec",
+        "type": "function",
+        "z": "cd595f468c67216c",
+        "name": "",
+        "func": "\nmsg.payload=(global.get(\"Ppal\")+\",\"+global.get(\"V1\")+\",\"+global.get(\"V2\")+\",\"+global.get(\"V3\")+\",\"+global.get(\"Motor\"))\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 1500,
+        "wires": [
+            [
+                "82caed3af439ff10"
+            ]
+        ]
+    },
+    {
+        "id": "c37b38981c6eb217",
+        "type": "inject",
+        "z": "cd595f468c67216c",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payloadType": "date",
+        "x": 200,
+        "y": 1500,
+        "wires": [
+            [
+                "5f75143fce72f6ec"
+            ]
+        ]
+    },
+    {
+        "id": "82caed3af439ff10",
+        "type": "mqtt out",
+        "z": "cd595f468c67216c",
+        "name": "",
+        "topic": "esp32/output",
+        "qos": "2",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "9ebedd0295e0c7ad",
+        "x": 590,
+        "y": 1500,
+        "wires": []
+    },
+    {
+        "id": "1f411823e8d0b280",
+        "type": "ui_spacer",
+        "z": "cd595f468c67216c",
+        "name": "spacer",
+        "group": "640115dc75f5612d",
+        "order": 2,
+        "width": 10,
+        "height": 1
+    },
+    {
+        "id": "9ee9d5789e4353b6",
+        "type": "ui_spacer",
+        "z": "cd595f468c67216c",
+        "name": "spacer",
+        "group": "640115dc75f5612d",
+        "order": 4,
+        "width": 1,
+        "height": 1
+    },
+    {
+        "id": "a4344f914e6768f4",
+        "type": "ui_spacer",
+        "z": "cd595f468c67216c",
+        "name": "spacer",
+        "group": "640115dc75f5612d",
+        "order": 6,
+        "width": 1,
+        "height": 1
+    },
+    {
+        "id": "9ebedd0295e0c7ad",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "35.158.39.98",
+        "port": "1883",
+        "clientid": "RVN3598",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "sessionExpiry": ""
+    },
+    {
+        "id": "640115dc75f5612d",
+        "type": "ui_group",
+        "name": "Actuadores",
+        "tab": "b7f45bce5fafef17",
+        "order": 3,
+        "disp": true,
+        "width": "7",
+        "collapse": false
+    },
+    {
+        "id": "d18aaa15b2dc6ba2",
+        "type": "ui_group",
+        "name": "Sensores",
+        "tab": "b7f45bce5fafef17",
+        "order": 2,
+        "disp": true,
+        "width": "10",
+        "collapse": false
+    },
+    {
+        "id": "41716c563ba62c91",
+        "type": "ui_group",
+        "name": "Controles",
+        "tab": "b7f45bce5fafef17",
+        "order": 4,
+        "disp": true,
+        "width": "12",
+        "collapse": false
+    },
+    {
+        "id": "dfb551eccf166e4b",
+        "type": "ui_group",
+        "name": "Logo",
+        "tab": "b7f45bce5fafef17",
+        "order": 1,
+        "disp": false,
+        "width": "5",
+        "collapse": false
+    },
+    {
+        "id": "b7f45bce5fafef17",
+        "type": "ui_tab",
+        "name": "R_GIS",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
+    }
+]
