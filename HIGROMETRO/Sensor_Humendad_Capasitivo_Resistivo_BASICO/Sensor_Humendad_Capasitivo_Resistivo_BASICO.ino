@@ -31,8 +31,8 @@ void setup() {
 //Intrucciones que se estaran repitiendo constantemente 
 void loop() 
 {
- // soilMoistureValue = analogRead(A0);  //put Sensor insert into soil
-   humedad_1 = analogRead(SENSORPIN_1);
+ // soilMoistureValue = analogRead(A0);  //colocar el Sensor en el suelo u agua
+   humedad_1 = analogRead(SENSORPIN_1);  // lee valores en un pin de entrada de una tarjeta ESP32
    Serial.println("Sensor 1:");
    Serial.println(humedad_1);
     
