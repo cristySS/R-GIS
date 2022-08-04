@@ -41,7 +41,7 @@ void setup() {
     EEPROM.begin(EEPROM_SIZE); //se inicializa la memoria reservada para la EEPROM
     Serial.println(F("DHTxx test!"));
     dht.begin();
-    for (i=0; i <No_Lecturas_Temp; i ++){
+    for (i=0; i < No_Lecturas_Temp; i ++){ //inicia el ciclo de 24 lecturas de temperatura cada 100mmilisegundos
           temp_21 = dht.readTemperature();
           float f = dht.readTemperature(true);
          
@@ -77,7 +77,7 @@ void loop() {
 //Funciones
 
 //******************************************************
-//Funcion de escritura en la EEPROM
+//Funcion de escritura en la EEPROM, puede utilizarse en lugar del "put"
 void writeTempEEPROM(int direcion, float temp_21){   
    EEPROM.put(direccion, temp_21);         //escritura en la EEPROM "put", direccion y dato a registrar
    delay(100);
