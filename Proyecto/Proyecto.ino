@@ -23,10 +23,12 @@
 #include <DHT.h>
 #include "math.h"
 #include <EEPROM.h>
+#include <PubSubClient.h> //Biblioteca para conexion MQTT, instalar desde el Administrador de librerías
+#include <ArduinoJson.h> //Biblioteca para manejo de Json, instalar desde el Administrador de librerías
 
 // Replace with your network credentials
-const char* ssid     = "INFINITUM5853";// "IZZI-8F7C"; //"GTYV"; //"ARRIS-8F7C"; //
-const char* password = "JKcuTY9G4C"; // "C85261838F7C"; //"V1ncul4cI0n*#2021"; // "C85261838F7C"; //
+const char* ssid     = "GTYV";               //"INFINITUM5853"; //"IZZI-8F7C"; // "ARRIS-8F7C"; //
+const char* password = "V1ncul4cI0n*#2021"; //"JKcuTY9G4C"; //"C85261838F7C"; //   "C85261838F7C"; //
 
 // Define NTP Client para obtener la fecha/hora
 WiFiUDP ntpUDP;
@@ -40,6 +42,9 @@ NTPClient timeClient(ntpUDP);
 #define RELAY_ON 0   //define una constante de activacion de relé, los relés se activan con nivel BAJO (0)
 #define RELAY_OFF 1
 
+//Datos del broker MQTT      
+const char* mqtt_server = "18.195.236.18";//"172.21.90.15"; //"192.168.100.126"; // Si estas en una red local, coloca la IP asignada, en caso contrario, coloca la IP publica
+IPAddress server(18,195,236,18);//(172,21,90,15); //(192,168,100,126);
 
 const float GSC = 0.082;                  //constante solar en  MJ/m  por min
 const float EFICIENCIA = 0.80;             //eficiencia de riego de acuerdo al diseño hidraulico, en este caso es por aspersores conuna eficiencia del 80-85% de cobertura
@@ -65,14 +70,22 @@ float valor;                                                                    
 bool registro = false;                                                                     //indica si la temperatura ya se registro o no en la hora actual
 int humedad_1, humedad_2, humedad_3;                                                       //indican la humedad del suelo, de acuerdo a la seccion
 int hr_int, min_int;                                                                       // horas y minutos en tipo ENTERO
-
-
-//Arreglos
-//float Temperaturas_DTH21[24];
+int estadoBomba =0, estadoElectrovalvula_1 = 0, estadoElectrovalvula_2 = 0, estadoElectrovalvula_3 = 0;    // indica es estado ON=1 o OFF=0 de cada electrovalvula (inicialmente TODAS cerradas),
+                                                                                           // para evitar que se abran dos electrovalvulas al mismo tiempo y,
+                                                                                           // para controlar la función millis() 
+float tiempo_riego_1 = 0, tiempo_riego_2 = 0, tiempo_riego_3 = 0;                          //tiempo de riego de cada seccion, se inicializa en 0, por si alguna seccion no requirio riego durante el dia
+int hora_de_riego = 16;                                                                     //fija la hora de riego
+long timenow1, timelast1, timenow2, timelast2, timenow3, timelast3;                                                                     //variables de control n0 bloqueante
+float wait_1 = 0, wait_2 = 0, wait_3 = 0;                                                   //periodos de espera no bloqueante a causa del riego de cada seccion
+int minutos_riegorapidoprueba= 30; //sirve para hacer pruebas rapidas en minutos, programar el tiempo de riego
+long timeNow, timeLast; // Variables de control de tiempo no bloqueante
+int wait = 5000;  // Indica la espera cada 5 segundos para envío de mensajes MQTT
 
 //Objects
 DHT dht(DHTPIN, DHTTYPE);
 
+WiFiClient espClient; // Este objeto maneja los datos de conexion WiFi
+PubSubClient client(espClient); // Este objeto maneja los datos de conexion al broker
 
 
 void setup() {
@@ -117,6 +130,13 @@ void setup() {
    pinMode (26, OUTPUT);
    pinMode (27, OUTPUT);
    pinMode (33, OUTPUT);
+
+   // Conexión con el broker MQTT        
+  client.setServer(server, 1883); // Conectarse a la IP del broker en el puerto indicado
+  client.setCallback(callback); // Activar función de CallBack, permite recibir mensajes MQTT y ejecutar funciones a partir de ellos
+  delay(1500);  // Esta espera es preventiva, espera a la conexión para no perder información
+
+  timeLast = millis (); // Inicia el control de tiempo
 }
 
 
@@ -135,13 +155,16 @@ void loop() {
   Fecha_Hora();  //Esta función muestra la Fecha y hora actual, llama a la función que calcula
                  // el numero de dias transcurridos y llama la función de registro de temperatura
                  // ambiental con periodos de 1 hora
-  
+
+ 
+   
   Serial.print("Total dias del año: ");Serial.println(Total_dias_anyo);
   Toma_Temperatura(hr_int, min_int);
   Humedad_Sensor_1();
   Humedad_Sensor_2();
   Humedad_Sensor_3();
-  //delay(6000); //toma la temperatura ambiental cada 3 segundos
+  mandar_json();    //llamada a la funcion json
+   
   if ((min_int == 0) && (registro == false) && (No_Lecturas_Temp == 0)){     //ciclo para registrar la temperatura ambiental en el minuto 0 de cada hora
        No_Lecturas_Temp = No_Lecturas_Temp +1;   //No_Lecturas_Temp lleva el conteo de cuantos registros de temperatura ambiental se llevan al momento
        EEPROM.put(direccion, temp_21);           //registra la lectura temp ambiental en la direccion de la EEPROM
@@ -152,7 +175,6 @@ void loop() {
        Serial.print(EEPROM.get(direccion, valor));
        Serial.print(" en la direccion EEPROM ");
        Serial.println(direccion);
-       //direccion += sizeof(float);                //incrementa la direccion de memoria en los bytes necesarios que ocupo el float almacenado
        Serial.print(" a la hora ");
        Serial.println(hr_int);
        registro = true;                         //ya se registro la temperatura durante el minuto 0 de la hora actual
@@ -187,131 +209,179 @@ void loop() {
   Serial.println(riego2);
   Serial.print("Necesita riego seccion 3: ");
   Serial.println(riego3);   
-  if ((hr_int == 23) && (regado_TODO == false)){ 
-           if ((regado1 == false) && (riego1 == true)){                        //riega seccion 1
-               //comprobar si en eltranscurso del dia, antes de la hora fijda de riego, la seccion recupero o no la humedad, puede ser a causa de lluvia
-               humedad_1 = analogRead(SENSORPIN_1);
-               Serial.println("Humedad actual de la Sección 1:");
-               Serial.println(humedad_1);
-               if (humedad_1 > 2700){
-                   Serial.println("requiere riego la seccion 1...");
-                   Calculo_TempmMp();                                                   //Esta función calcula la temperatura minima, maxima y promedio
-                   Evapotranspiracion(Total_dias_anyo, temp_min, temp_max, avg_temp);  //devuelve la etc
-                   Tiempo_de_Riego(EFICIENCIA, etc);                                    //devuelve el tiempo de reiego necesario en cada seccion en minutos
-                   Serial.print("Tiempo de riego, Sección 1: ");
-                   Serial.print(ta_1, 5);
-                   Serial.println(" minutos");
-                   int tiempo_riego_1 = ta_1 * 60000;                                   //calcula el tiempo en milisegundos que se mantendra la bomba y electrovalvula de la seccion 1 abierta
-                   Serial.print("regando seccion 1...Esto tomará (riego prioritario):");
-                   Serial.print(tiempo_riego_1);
-                   Serial.println(" milisegundos");
+ 
+ if ((hr_int == hora_de_riego) && (regado_TODO == false)){      //hora en que se programa el riego, 
+                                                                 //en caso de que el sensor de humedad del suelo detecte una humedad menor a la deseada                                                                 
+     if ((regado1 == false) && (riego1 == true)){                        //riega seccion 1
+         //comprobar si en eltranscurso del dia, antes de la hora fijda de riego, la seccion recupero o no la humedad, puede ser a causa de lluvia
+         humedad_1 = analogRead(SENSORPIN_1);
+         Serial.println("Humedad actual de la Sección 1:");
+         Serial.println(humedad_1);
+         if (humedad_1 > 2700){
+             Serial.println("requiere riego la seccion 1...");
+             Calculo_TempmMp();                                                   //Esta función calcula la temperatura minima, maxima y promedio
+             Evapotranspiracion(Total_dias_anyo, temp_min, temp_max, avg_temp);  //devuelve la etc
+             Tiempo_de_Riego(EFICIENCIA, etc);                                    //devuelve el tiempo de reiego necesario en cada seccion en minutos
+             Serial.print("Tiempo de riego, Sección 1: ");
+             Serial.print(ta_1, 5);
+             Serial.println(" minutos");
+             tiempo_riego_1 = ta_1 * 60000;                                   //calcula el tiempo en milisegundos que se mantendra la bomba y electrovalvula de la seccion 1 abierta
+             Serial.print("regando seccion 1...Esto tomará (riego prioritario):");
+             Serial.print(tiempo_riego_1);
+             //timelast = millis();                                                 //inicia el control del tiempo
+             Serial.println(" milisegundos");
+             float wait_1 = tiempo_riego_1;                                          //establece el tiempo de espera, duracion del riego de la sección 1
+                                                                                   //tiempo que duraran la bomba y electrovalvula 1 ON
+             timelast1 = millis();                                                 //inicia el control del tiempo      
+             
+             timenow1 = millis();                                                   //control de tiempo para esperas no bloqueantes
+             
+             while ((timenow1 - timelast1) <= wait_1){                                   // Compara se ya se cumplio el tiempo de riego  necesario y encendido de bomba y apertura de electrovalvula 1
                    digitalWrite (26, RELAY_ON);     //Activa relé 2, que abre la ELECTROVALVULA 1
                    digitalWrite (25, RELAY_ON);     //Activa relé 1, que enciende la BOMBA
-                   //delay (2000);
-                   delay(Tiempo_riego_1);
-                   digitalWrite (25, RELAY_OFF);    //Desactiva relé 1, apaga la BOMBA
-                   digitalWrite (26, RELAY_OFF);    //Desactiva relé 2, cierra la ELECTROVALVULA 1
+                   estadoBomba = 1;
+                   estadoElectrovalvula_1 = 1;
+                   mandar_json();    //llamada a la funcion json
+                   delay (6000);
+                   timenow1 = millis();
+             }
+                 digitalWrite (25, RELAY_OFF);    //Desactiva relé 1, apaga la BOMBA
+                 digitalWrite (26, RELAY_OFF);    //Desactiva relé 2, cierra la ELECTROVALVULA 1
+                 estadoBomba = 0;
+                 estadoElectrovalvula_1 = 0;
+                 mandar_json();    //llamada a la funcion json
+                 regado1 = true;
+                 riego1 = false;
+                 regado_TODO =true;
+                
+              }
+              //delay(100);
+          }
+           else {
+                   Serial.print("la seccion 1 ha recuperado la humedad necesaria: ");
+                   Serial.println(humedad_1);
                    regado1 = true;
                    riego1 = false;
                    regado_TODO =true;
-               } 
-               
-               else {
-                   Serial.print("la seccion 1 ha recuperado la humedad necesaria: ");
-                   Serial.println(humedad_1);
+                   estadoBomba = 0;
+                   estadoElectrovalvula_1 = 0;
                }
-            }
-           else {
-               if ((regado2 == false) && (riego2 == true)){
-                  //riega seccion 2
-                   humedad_2 = analogRead(SENSORPIN_2);
-                   Serial.println("Humedad actual de la Sección 2:");
-                   Serial.println(humedad_2);
-                   if (humedad_2 > 2700){
-                      Serial.println("requiere riego la seccion 2...");
-                      Calculo_TempmMp();                                                   //Esta función calcula la temperatura minima, maxima y promedio
-                      Evapotranspiracion(Total_dias_anyo, temp_min, temp_max, avg_temp);  //devuelve la etc
-                      Tiempo_de_Riego(EFICIENCIA, etc);                                    //devuelve el tiempo de reiego necesario en cada seccion en minutos
-                      Serial.print("Tiempo de riego, Sección 2: ");
-                      Serial.print(ta_2, 5);
-                      Serial.println(" minutos");
-                      int tiempo_riego_2 = ta_2 * 60000;                                   //calcula el tiempo en milisegundos que se mantendra la bomba y electrovalvula de la seccion 1 abierta
-                      Serial.print("regando seccion 2...Esto tomará (riego prioritario):");
-                      Serial.print(tiempo_riego_2);
-                      Serial.println(" milisegundos");
+        }
+        
+    if ((hr_int == hora_de_riego ) && (min_int >= (wait_1 + 1)) && (riego2 == true)) {  
+                    
+        if ((regado2 == false) && (riego2 == true) && (estadoElectrovalvula_1 == 0)){
+            //riega seccion 2
+            humedad_2 = analogRead(SENSORPIN_2);
+            Serial.println("Humedad actual de la Sección 2:");
+            Serial.println(humedad_2);
+            if (humedad_2 > 2700){
+                Serial.println("requiere riego la seccion 2...");
+                Calculo_TempmMp();                                                   //Esta función calcula la temperatura minima, maxima y promedio
+                Evapotranspiracion(Total_dias_anyo, temp_min, temp_max, avg_temp);  //devuelve la etc
+                Tiempo_de_Riego(EFICIENCIA, etc);                                    //devuelve el tiempo de reiego necesario en cada seccion en minutos
+                Serial.print("Tiempo de riego, Sección 2: ");
+                Serial.print(ta_2, 5);
+                Serial.println(" minutos");
+                tiempo_riego_2 = ta_2 * 60000;                                   //calcula el tiempo en milisegundos que se mantendra la bomba y electrovalvula de la seccion 1 abierta
+                Serial.print("regando seccion 2...Esto tomará (riego prioritario):");
+                Serial.print(tiempo_riego_2);
+                Serial.println(" milisegundos");
+                float wait_2 = tiempo_riego_2;                                          //establece el tiempo de espera, duracion del riego de la sección 1
+                                                                                   //tiempo que duraran la bomba y electrovalvula 1 ON
+                timelast2 = millis();                                                 //inicia el control del tiempo      
+                timenow2 = millis();                                                   //control de tiempo para esperas no bloqueantes
+             
+                while ((timenow2 - timelast2) <= wait_2){                                   // Compara se ya se cumplio el tiempo de riego  necesario y encendido de bomba y apertura de electrovalvula 1
                       digitalWrite (27, RELAY_ON);     //Activa relé 3, que abre la ELECTROVALVULA 2
                       digitalWrite (25, RELAY_ON);     //Activa relé 1, que enciende la BOMBA
-                      //delay (2000);
-                       delay(Tiempo_riego_2);
-                      digitalWrite (25, RELAY_OFF);    //Desactiva relé 1, apaga la BOMBA
-                      digitalWrite (27, RELAY_OFF);    //Desactiva relé 3, cierra la ELECTROVALVULA 2
-                      regado2 = true;
-                      riego2 = false;
-                      regado_TODO =true;
-                    }
-                  }
-                  else{
-                      if ((regado3 == false) && (riego3 == true)){
-                           //riega seccion 3 
-                           humedad_3 = analogRead(SENSORPIN_3);
-                           Serial.println("Humedad actual de la Sección 3:");
-                           Serial.println(humedad_3);
-                           if (humedad_3 > 2700){
-                              Calculo_TempmMp();                                                   //Esta función calcula la temperatura minima, maxima y promedio
-                              Evapotranspiracion(Total_dias_anyo, temp_min, temp_max, avg_temp);  //devuelve la etc
-                              Tiempo_de_Riego(EFICIENCIA, etc);                                    //devuelve el tiempo de reiego necesario en cada seccion en minutos
-                              Serial.print("Tiempo de riego, Sección 3: ");
-                              Serial.print(ta_3, 5);
-                              Serial.println(" minutos");
-                              int tiempo_riego_3 = ta_3 * 60000;                                   //calcula el tiempo en milisegundos que se mantendra la bomba y electrovalvula de la seccion 1 abierta
-                              Serial.print("regando seccion 3...Esto tomará (riego prioritario):");
-                              Serial.print(tiempo_riego_3);
-                              Serial.println(" milisegundos");
-                              digitalWrite (33, RELAY_ON);     //Activa relé 4, que abre la ELECTROVALVULA 3
-                              digitalWrite (25, RELAY_ON);     //Activa relé 1, que enciende la BOMBA
-                              //delay (2000);
-                              delay(Tiempo_riego_3);
-                              digitalWrite (25, RELAY_OFF);    //Desactiva relé 1, apaga la BOMBA
-                              digitalWrite (33, RELAY_OFF);    //Desactiva relé 4, cierra la ELECTROVALVULA 3
-                              regado3 = true;
-                              riego3 = false;
-                              regado_TODO = true;
-                            }  
-                           else { //recuperara a evapotranspiracion sin prioridad
-                                Calculo_TempmMp();                                                   //Esta función calcula la temperatura minima, maxima y promedio
-                                Evapotranspiracion(Total_dias_anyo, temp_min, temp_max, avg_temp);  //devuelve la etc
-                                Tiempo_de_Riego(EFICIENCIA, etc);                                    //devuelve el tiempo de reiego necesario en cada seccion en minutos
-                                Serial.print("Tiempo de riego, Sección 1: ");
-                                Serial.print(ta_1, 5);
-                                Serial.println(" minutos");
-                                Serial.print("Tiempo de riego, Sección 2: ");
-                                Serial.print(ta_2, 5);
-                                Serial.println(" minutos");
-                                Serial.print("Tiempo de riego, Sección 3: ");
-                                Serial.print(ta_3, 5);
-                                Serial.println(" minutos");
-                                digitalWrite (26, RELAY_ON);     //Activa relé 2, que abre la ELECTROVALVULA 1
-                                digitalWrite (25, RELAY_ON);     //Activa relé 1, que enciende la BOMBA
-                                //delay (2000);
-                                delay(Tiempo_riego_1);
-                                digitalWrite (27, RELAY_ON);     //Activa relé 3, que abre la ELECTROVALVULA 2
-                                digitalWrite (26, RELAY_OFF);    //Desactiva relé 2, cierra la ELECTROVALVULA 1   
-                                //delay (2000);
-                                delay(Tiempo_riego_2);
-                                digitalWrite (33, RELAY_ON);     //Activa relé 4, que abre la ELECTROVALVULA 3
-                                digitalWrite (27, RELAY_OFF);    //Desactiva relé 3, cierra la ELECTROVALVULA 2
-                                //delay (2000);
-                                delay(Tiempo_riego_3);
-                                digitalWrite (25, RELAY_OFF);    //Desactiva relé 1, apaga la BOMBA
-                                digitalWrite (33, RELAY_OFF);    //Desactiva relé 4, cierra la ELECTROVALVULA 3
-                                riego1 = false; riego2 = false; riego3 = false;
-                                regado1 = true; regado2 = true;regado3 = true;
-                                regado_TODO =true;
-                            }
-                        }
-                   }
-               }
-           if ((min_int > 45) && (regado1 == true) || (regado2 == true) || (regado3 == true)){
+                      estadoBomba = 1;
+                      estadoElectrovalvula_2 = 1;
+                      mandar_json();    //llamada a la funcion json
+                      timenow2 = millis();
+                     }
+                 digitalWrite (25, RELAY_OFF);    //Desactiva relé 1, apaga la BOMBA
+                 digitalWrite (27, RELAY_OFF);    //Desactiva relé 3, cierra la ELECTROVALVULA 2
+                 estadoBomba = 0;
+                 estadoElectrovalvula_2 = 0;
+                 mandar_json();    //llamada a la funcion json
+                 regado2 = true;
+                 riego2 = false;
+                 regado_TODO =true;
+                 
+              }
+                        
+             else {
+                 Serial.print("la seccion 2 ha recuperado la humedad necesaria: ");
+                Serial.println(humedad_2);
+                regado2 = true;
+                riego2 = false;
+                regado_TODO =true;
+                estadoBomba = 0;
+                estadoElectrovalvula_2 = 0;
+             }
+         }
+    }
+    
+     float riego1yriego2 = wait_1 + wait_2;
+     if ((hr_int == hora_de_riego ) && (min_int > (riego1yriego2 + 1)) && (riego3 == true)) {    
+             
+     if ((regado3 == false) && (riego3 == true) && (estadoElectrovalvula_1 == 0) && (estadoElectrovalvula_2 == 0)){
+              //riega seccion 3 
+              humedad_3 = analogRead(SENSORPIN_3);
+              Serial.println("Humedad actual de la Sección 3:");
+              Serial.println(humedad_3);
+              if (humedad_3 > 2700){
+                 Calculo_TempmMp();                                                   //Esta función calcula la temperatura minima, maxima y promedio
+                 Evapotranspiracion(Total_dias_anyo, temp_min, temp_max, avg_temp);  //devuelve la etc
+                 Tiempo_de_Riego(EFICIENCIA, etc);                                    //devuelve el tiempo de reiego necesario en cada seccion en minutos
+                 Serial.print("Tiempo de riego, Sección 3: ");
+                 Serial.print(ta_3, 5);
+                 Serial.println(" minutos");
+                 tiempo_riego_3 = ta_3 * 60000;                                   //calcula el tiempo en milisegundos que se mantendra la bomba y electrovalvula de la seccion 1 abierta
+                 Serial.print("regando seccion 3...Esto tomará (riego prioritario):");
+                 Serial.print(tiempo_riego_3);
+                 Serial.println(" milisegundos");
+                  float wait_3 = tiempo_riego_3;                                          //establece el tiempo de espera, duracion del riego de la sección 1
+                                                                                   //tiempo que duraran la bomba y electrovalvula 1 ON
+                timelast3 = millis();                                                 //inicia el control del tiempo      
+                timenow3 = millis();                                                   //control de tiempo para esperas no bloqueantes
+             
+                while ((timenow3 - timelast3) <= wait_3){                                   // Compara se ya se cumplio el tiempo de riego  necesario y encendido de bomba y apertura de electrovalvula 1
+                      digitalWrite (33, RELAY_ON);     //Activa relé 4, que abre la ELECTROVALVULA 3
+                      digitalWrite (25, RELAY_ON);     //Activa relé 1, que enciende la BOMBA
+                      estadoBomba = 1;
+                      estadoElectrovalvula_3 = 1;
+                      mandar_json();    //llamada a la funcion json
+                      
+                      timenow3 = millis();
+                     }
+                 digitalWrite (25, RELAY_OFF);    //Desactiva relé 1, apaga la BOMBA
+                 digitalWrite (33, RELAY_OFF);    //Desactiva relé 3, cierra la ELECTROVALVULA 3
+                 estadoBomba = 0;
+                 estadoElectrovalvula_3 = 0;
+                 mandar_json();    //llamada a la funcion json 
+                 regado3 = true;
+                 riego3 = false;
+                 regado_TODO =true;
+                
+              }
+                
+              else{
+                 Serial.print("la seccion 3 ha recuperado la humedad necesaria: ");
+                 Serial.println(humedad_3);
+                 regado3 = true;
+                 riego3 = false;
+                 regado_TODO =true;
+                 estadoBomba = 0;
+                 estadoElectrovalvula_3 = 0;
+              }
+     }                         
+   }
+      
+   float total_minutos_riego = wait_1 + wait_2 + wait_3;       
+   
+   if ((min_int > total_minutos_riego) && (regado1 == true) || (regado2 == true) || (regado3 == true)){
                riego1 = false;
                riego2 = false;
                riego3 = false;
@@ -319,15 +389,51 @@ void loop() {
                regado2 = false;
                regado3 = false;
                regado_TODO = false ;
+               estadoBomba = 0;
+               estadoElectrovalvula_1 = 0;
+               estadoElectrovalvula_2 = 0;
+               estadoElectrovalvula_3 = 0;
+               mandar_json();    //llamada a la funcion json 
             }  
-        }  
-   delay(6000);     
+       
+   
+   delay(6000); 
 }
-
-
 
 //Funciones definidas por el usuario
 //****************************************************************************************
+void mandar_json(){
+  
+  //Verificar siempre que haya conexión al broker
+  if (!client.connected()) {
+    reconnect();  // En caso de que no haya conexión, ejecutar la función de reconexión, definida despues del void setup ()
+  }// fin del if (!client.connected())
+  client.loop(); // Esta función es muy importante, ejecuta de manera no bloqueante las funciones necesarias para la comunicación con el broker
+  
+  timeNow = millis(); // Control de tiempo para esperas no bloqueantes
+  if (timeNow - timeLast > wait) { // Manda un mensaje por MQTT cada cinco segundos
+    timeLast = timeNow; // Actualización de seguimiento de tiempo
+///////////////////////////
+   DynamicJsonDocument doc(1024);
+
+   doc["H1"] = humedad_1;
+   doc["H2"] = humedad_2;
+   doc["H3"] = humedad_3;
+   doc["Temp"] = temp_21;
+   doc["V1"] = estadoElectrovalvula_1;
+   doc["V2"] = estadoElectrovalvula_2;
+   doc["V3"] = estadoElectrovalvula_3;
+   doc["Motor"] = estadoBomba;
+   char dataString[1024];
+   serializeJson(doc, dataString);
+///////////////////////////
+    //char dataString[]="{\"H1\": 900, \"H2\": 1000, \"H3\": 1200, \"Temp\":25, \"V1\":0, \"V2\":0, \"V3\":0, \"Motor\":0}"; // Define una arreglo de caracteres para enviarlos por MQTT, especifica la longitud del mensaje en 8 caracteres
+    Serial.print("JSON: "); // Se imprime en monitor solo para poder visualizar que el evento sucede
+    Serial.println(dataString);
+    client.publish("CodigoIoT/G6/r-gis", dataString);
+  }// fin del if (timeNow - timeLast > wait)
+}
+
 String Fecha_Hora(){
   // El formato de hora es el siguiente:
   // 2018-05-28T16:00:13Z
@@ -513,7 +619,6 @@ int Calculo_dia(String month, String mydate){
                   break;
            case 3:
                   numero_de_dias = 58;
-                  //revisar si es año bisiesto
                   break;      
            case 4:
                   numero_de_dias = 90;
@@ -691,6 +796,57 @@ int Tiempo_de_Riego(float EFICIENCIA, float etc){
   return ta_3;
 }
 
+void callback(char* topic, byte* message, unsigned int length) {
 
+  // Indicar por serial que llegó un mensaje
+  Serial.print("Llegó un mensaje en el tema: ");
+  Serial.print(topic);
 
-//https://randomnerdtutorials.com/esp32-ntp-client-date-time-arduino-ide/
+  // Concatenar los mensajes recibidos para conformarlos como una varialbe String
+  String messageTemp; // Se declara la variable en la cual se generará el mensaje completo  
+  for (int i = 0; i < length; i++) {  // Se imprime y concatena el mensaje
+    Serial.print((char)message[i]);
+    messageTemp += (char)message[i];
+  }
+
+  // Se comprueba que el mensaje se haya concatenado correctamente
+  Serial.println();
+  Serial.print ("Mensaje concatenado en una sola variable: ");
+  Serial.println (messageTemp);
+
+  // En esta parte puedes agregar las funciones que requieras para actuar segun lo necesites al recibir un mensaje MQTT
+
+  // Ejemplo, en caso de recibir el mensaje true - false, se cambiará el estado del led soldado en la placa.
+  // El ESP323CAM está suscrito al tema esp/output
+  if (String(topic) == "esp32/output") {  // En caso de recibirse mensaje en el tema esp32/output
+    if(messageTemp == "true"){
+      Serial.println("encendido");
+      //digitalWrite(flashLedPin, HIGH);
+    }// fin del if (String(topic) == "esp32/output")
+    else if(messageTemp == "false"){
+      Serial.println("apagado");
+      //digitalWrite(flashLedPin, LOW);
+    }// fin del else if(messageTemp == "false")
+  }// fin del if (String(topic) == "esp32/output")
+}// fin del void callback
+
+// Función para reconectarse
+void reconnect() {
+  // Bucle hasta lograr conexión
+  while (!client.connected()) { // Pregunta si hay conexión
+    Serial.print("Tratando de contectarse...");
+    // Intentar reconexión
+    if (client.connect("ESP32CAMClient")) { //Pregunta por el resultado del intento de conexión
+      Serial.println("Conectado");
+      client.subscribe("esp32/output"); // Esta función realiza la suscripción al tema
+    }// fin del  if (client.connect("ESP32CAMClient"))
+    else {  //en caso de que la conexión no se logre
+      Serial.print("Conexion fallida, Error rc=");
+      Serial.print(client.state()); // Muestra el codigo de error
+      Serial.println(" Volviendo a intentar en 5 segundos");
+      // Espera de 5 segundos bloqueante
+      delay(5000);
+      Serial.println (client.connected ()); // Muestra estatus de conexión
+    }// fin del else
+  }// fin del bucle while (!client.connected())
+}// fin de void reconnect()
