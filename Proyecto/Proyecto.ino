@@ -207,8 +207,8 @@ void loop() {
                    Serial.println(" milisegundos");
                    digitalWrite (26, RELAY_ON);     //Activa relé 2, que abre la ELECTROVALVULA 1
                    digitalWrite (25, RELAY_ON);     //Activa relé 1, que enciende la BOMBA
-                   delay (2000);
-                   //delay(Tiempo_riego_1);
+                   //delay (2000);
+                   delay(Tiempo_riego_1);
                    digitalWrite (25, RELAY_OFF);    //Desactiva relé 1, apaga la BOMBA
                    digitalWrite (26, RELAY_OFF);    //Desactiva relé 2, cierra la ELECTROVALVULA 1
                    regado1 = true;
@@ -241,8 +241,8 @@ void loop() {
                       Serial.println(" milisegundos");
                       digitalWrite (27, RELAY_ON);     //Activa relé 3, que abre la ELECTROVALVULA 2
                       digitalWrite (25, RELAY_ON);     //Activa relé 1, que enciende la BOMBA
-                      delay (2000);
-                     //delay(Tiempo_riego_2);
+                      //delay (2000);
+                       delay(Tiempo_riego_2);
                       digitalWrite (25, RELAY_OFF);    //Desactiva relé 1, apaga la BOMBA
                       digitalWrite (27, RELAY_OFF);    //Desactiva relé 3, cierra la ELECTROVALVULA 2
                       regado2 = true;
@@ -269,8 +269,8 @@ void loop() {
                               Serial.println(" milisegundos");
                               digitalWrite (33, RELAY_ON);     //Activa relé 4, que abre la ELECTROVALVULA 3
                               digitalWrite (25, RELAY_ON);     //Activa relé 1, que enciende la BOMBA
-                              delay (2000);
-                              //delay(Tiempo_riego_3);
+                              //delay (2000);
+                              delay(Tiempo_riego_3);
                               digitalWrite (25, RELAY_OFF);    //Desactiva relé 1, apaga la BOMBA
                               digitalWrite (33, RELAY_OFF);    //Desactiva relé 4, cierra la ELECTROVALVULA 3
                               regado3 = true;
@@ -292,16 +292,16 @@ void loop() {
                                 Serial.println(" minutos");
                                 digitalWrite (26, RELAY_ON);     //Activa relé 2, que abre la ELECTROVALVULA 1
                                 digitalWrite (25, RELAY_ON);     //Activa relé 1, que enciende la BOMBA
-                                delay (2000);
-                                //delay(Tiempo_riego_1);
+                                //delay (2000);
+                                delay(Tiempo_riego_1);
                                 digitalWrite (27, RELAY_ON);     //Activa relé 3, que abre la ELECTROVALVULA 2
                                 digitalWrite (26, RELAY_OFF);    //Desactiva relé 2, cierra la ELECTROVALVULA 1   
-                                delay (2000);
-                                //delay(Tiempo_riego_2);
+                                //delay (2000);
+                                delay(Tiempo_riego_2);
                                 digitalWrite (33, RELAY_ON);     //Activa relé 4, que abre la ELECTROVALVULA 3
                                 digitalWrite (27, RELAY_OFF);    //Desactiva relé 3, cierra la ELECTROVALVULA 2
-                                delay (2000);
-                                //delay(Tiempo_riego_3);
+                                //delay (2000);
+                                delay(Tiempo_riego_3);
                                 digitalWrite (25, RELAY_OFF);    //Desactiva relé 1, apaga la BOMBA
                                 digitalWrite (33, RELAY_OFF);    //Desactiva relé 4, cierra la ELECTROVALVULA 3
                                 riego1 = false; riego2 = false; riego3 = false;
