@@ -1,5 +1,6 @@
 /*
- * como usar el sensor DHT21 con ESP32 
+ * Este programa muestra
+ * como conectar y hacer uso del sensor DHT21 con ESP32 
  * Por: Cristina Sánchez Saldaña
  *      Rogelio Vázquez Nieves
  * Fecha: 14 de junio de 2022
@@ -16,6 +17,7 @@
 
 // Bibliotecas
 #include "DHT.h"   //libreria a utilizar DHT sensor library
+                   // Debes añadir la librería Adafruit_Sensor.h. Sólo tienes que abrir el gestor de librerías y buscar "adafruit unified sensor".
 
 
 // Constantes
@@ -45,20 +47,20 @@ void loop() {// Inicio de void loop
   hum_21 = dht.readHumidity();     //lectura de humedad
   temp_21 = dht.readTemperature(); //lectura de temperatura
 
-  float f = dht.readTemperature(true);
+  float f = dht.readTemperature(true);   //se almacena la temperatura en f
 
   //revision si existe falla en la lectura del sensor
-  if (isnan(hum_21) || isnan(temp_21) || isnan(f)) {
+  if (isnan(hum_21) || isnan(temp_21) || isnan(f)) {    //establece las comparaciones necesarias para indicar falla en la conexion con el sensor
     Serial.println(F("Falla al leer el sensor DHT"));
     return;
   } // fin de if
 
-  float hif = dht.computeHeatIndex(f, hum_21);
-  float hic = dht.computeHeatIndex(temp_21, hum_21, false);
+  float hif = dht.computeHeatIndex(f, hum_21); //con la función "computeHeatIndex" se obtiene el indice de humedad
+  float hic = dht.computeHeatIndex(temp_21, hum_21, false);  //muestra el indice de calor
 
   Serial.print(F("Humedad: "));           //imprime en el serial el mensaje, combinado con la macro F() ayuda a ahorrar memoria SRAM, al mover la cadena a la memoria FLASH
   Serial.print(hum_21);                   //imprime el valor de la variable
-  Serial.print(F("%    Temperatura:"));
+  Serial.print(F("%    Temperatura:"));    // muestra el mensaje % Temperatura
   Serial.print(temp_21);
   Serial.println(F("°C"));
   
