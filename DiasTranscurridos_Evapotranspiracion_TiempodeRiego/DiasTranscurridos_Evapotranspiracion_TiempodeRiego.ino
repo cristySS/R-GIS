@@ -1,8 +1,8 @@
 /*
- * Este programa toma la Fecah y hora de acuerdo a la zona horaria de la CDMX, México
+ * Este programa toma la Fecha y hora de acuerdo a la zona horaria de la CDMX, México
  * Registra las temperaturas amabientales dadas por el DHT21 en un perido de 24 horas
  * registradas cada hora.
- * Calcula la Temperatura minima, Temperatura MAXIMA y Temperatura Promedio
+ * Calcula la Temperatura mínima, Temperatura MAXIMA y Temperatura Promedio
  * Calcula la EVAPOTRANSPIRACION del pasto que será necesaria recuperar con el riego
  * 
  * Por: Cristina Sánchez Saldaña
@@ -11,17 +11,22 @@
 */
 
 //Librerías
-#include <WiFi.h>
-#include <NTPClient.h>
-#include <WiFiUdp.h>
+#include <WiFi.h>       // Habilita la conexión a la red (local e Internet) usando el Arduino WiFi shield. Con esta biblioteca puede crear instancias de servidores, clientes y enviar/recibir paquetes UDP a través de WiFi.
+#include <NTPClient.h>  /* Crea un NTPClient para conectarse a un servidor de tiempo, permite obtener la fecha y la hora 
+                          mediante el protocolo de tiempo de red (NTP); no necesita ningún hardware adicional.
+                          Para ello, se requiere la biblioteca NTP Client bifurcada por Taranais.
+                          en https://randomnerdtutorials-com.translate.goog/esp32-ntp-client-date-time-arduino-ide/?_x_tr_sl=en&_x_tr_tl=es&_x_tr_hl=es&_x_tr_pto=sc 
+                          puedes descargar la librería y encontrar las instrucciones de instalación.*/
+#include <WiFiUdp.h>    // Construye una instancia WiFiUDP de la clase WiFi UDP que puede enviar y recibir mensajes UDP
 #include <DHT.h>
-#include "math.h"
+#include "math.h"       // define varias funciones matemáticas
 
-// Replace with your network credentials
+/* Escriba sus credenciales de red en las siguientes variables, 
+para que el ESP32 pueda establecer una conexión a Internet y obtener la fecha y la hora del servidor NTP.*/
 const char* ssid     = "IZZI-8F7C"; //"GTYV";
 const char* password = "C85261838F7C"; //"V1ncul4cI0n*#2021";
 
-// Define NTP Client to get time
+// Define NTP Client para obtener el tiempo, solicita fecha y hora de un servidor NTP.
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
 
@@ -33,20 +38,21 @@ const float GSC = 0.082;                  //constante solar en  MJ/m  por min
 const float EFICIENCIA = 0.80;             //eficiencia de riego de acuerdo al diseño por aspersores
 
 // Variables to save date and time
-String formattedDate;
-String dayStamp;
-String timeStamp;
-int numero_de_dias;  //acumula los dias transcurridos por los meses completos
-int numero_dia;      // acumula los dias transcurridos del mes vigente
-int Total_dias_anyo;
-float hum_21, temp_21, temp_min, temp_max, avg_temp, sum_temp;  
-float etc, eto, kc, ra, x, dr, ws, ds;    //variables de la Evapotranspiración
-float lrb, lrb_m, g, area_de_riego; 
-float g_1, g_2, g_3, ga_1, ga_2, ga_3, ta_1, ta_2, ta_3;    //variables para el tiempo de riego
+String formattedDate;               //guarda la fecha en su formato original
+String dayStamp;                    //guarda la fecha
+String timeStamp;                   // guarda la hora
+int numero_de_dias;                 //acumula los dias transcurridos por los meses completos
+int numero_dia;                     // acumula los dias transcurridos del mes vigente
+int Total_dias_anyo;                //almacena el total de días del año transcurridos a la fecha
+float hum_21, temp_21, temp_min, temp_max, avg_temp, sum_temp;   //variables de humedad, temperatura (minima, maxima, promedio y suma de tmeeperaturas de 24 hrs)  
+float etc, eto, kc, ra, x, dr, ws, ds;                           //variables para el calculo de la Evapotranspiración
+float lrb, lrb_m, g, area_de_riego;                              // variables para el calculo de lamina de riego, gasto, area a reagar
+float g_1, g_2, g_3, ga_1, ga_2, ga_3, ta_1, ta_2, ta_3;         //variables para el tiempo de riego
 
 
 //Arreglos
-float Temperaturas_DTH21[24];
+float Temperaturas_DTH21[24];     //inicialmente se almacenaran las lecturas de temperaturas de un día en un arreglo
+                                  //si se desenergiza la placa ESP32, se perderan
 
 //Objects
 DHT dht(DHTPIN, DHTTYPE);
@@ -55,23 +61,23 @@ DHT dht(DHTPIN, DHTTYPE);
 
 void setup() {
   // Initialize Serial Monitor
-  Serial.begin(115200);
+  Serial.begin(115200);             //velocidad de salida al monitor serial
   Serial.print("Connecting to ");
   Serial.println(ssid);
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED) {   //devuelve el estado de conexión
     delay(500);
     Serial.print(".");
   }
-  // Print local IP address and start web server
+  // Muestra la dirección IP e inicia el servicor web
   Serial.println("");
   Serial.println("WiFi connected.");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 
-// Initialize a NTPClient to get time
+// Inicializa un NTPClient para obtener el tiempo
   timeClient.begin();
-  // Set offset time in seconds to adjust for your timezone, for example:
+  // Establezca el tiempo de compensación en segundos para ajustar su zona horaria, por ejemplo
   // GMT +1 = 3600
   // GMT +8 = 28800
   // GMT -1 = -3600
@@ -86,15 +92,18 @@ void setup() {
 
 
 void loop() {
+  //Las siguientes líneas aseguran que obtengamos una fecha y hora válidas:
   while(!timeClient.update()) {
     timeClient.forceUpdate();
   }
+  
+  
   Fecha_Hora();  //Esta función muestra la Fecha y hora actual, llama a la función que calcula
                  // el numero de dias transcurridos y llama la función de registro de temperatura
                  // ambiental con periodos de 1 hora
   Calculo_TempmMp();  //Esta función calcula la temperatura minima, maxima y promedio
-  Evapotranspiracion();
-  Tiempo_de_Riego(etc);
+  Evapotranspiracion();  //Esta función calcula la evapotranspiracion
+  Tiempo_de_Riego(etc);  //Calcula el tiempo de riego que requiere cada sección, recibiendo de entrada la evapotranspiración inicial
   
 }
 
@@ -102,41 +111,42 @@ void loop() {
 //Funciones definidas por el usuario
 //****************************************************************************************
 String Fecha_Hora(){
-  // The formattedDate comes with the following format:
+  // El formattedDate tiene el siguiente formato:
   // 2018-05-28T16:00:13Z
-  // We need to extract date and time
+  // necesitamos separar la fecha del tiempo
   formattedDate = timeClient.getFormattedDate();
   
   // Serial.println(formattedDate);   //imprime la fecha y hora mostrando el formato para extraer los datos
 
-  // Extract year/month/date ie reformat the NTP String
+  // Extrae  year/month/date del formato String dado por NTP 
 
-  int splitY = formattedDate.indexOf("-");
-  String year = formattedDate.substring(0, splitY);
+  int splitY = formattedDate.indexOf("-");             //obtiene la primer cadena hasta encontrar el caracter indice "-"
+  String year = formattedDate.substring(0, splitY);    //en year se almacena la subcadena a partir de la posicion 0
   //Serial.print("Año: "); Serial.println(year);
   
-  int splitM = formattedDate.indexOf("-", splitY + 2 );
-  String month = formattedDate.substring(5, splitM);
+  int splitM = formattedDate.indexOf("-", splitY + 2 );   // en splitM, la siguiente cadena  
+  String month = formattedDate.substring(5, splitM);      // en month se almacena la cadena obtenida a partir de la posicion 5, hasta encontrar el caracter de separacion "-"
   //Serial.print("Mes: "); Serial.println(month);
   
-  int splitD = formattedDate.indexOf("-", splitY + 3 );
-  String mydate = formattedDate.substring(8, 10); //cheat!
+  int splitD = formattedDate.indexOf("-", splitY + 3 );  // en splitD la siguiente cadena, numero 3 
+  String mydate = formattedDate.substring(8, 10);        // en mydate se almacena la cadena obtenida a partir de la posicion 8 a la 10
+  
   //Serial.print("Día: "); Serial.println(mydate);
   
-  int splitH = formattedDate.indexOf(":");
-  String hour = formattedDate.substring(11, 13);
+  int splitH = formattedDate.indexOf(":");               // obtiene la siguiente cadena a partir de T, delimitada po ":"
+  String hour = formattedDate.substring(11, 13);         //alamacena en hour los caracteres que estan despues de la posicion 11 a la 13
   //Serial.print("Horas: "); Serial.println(hour);
 
   //Una vez que se tiene el mes, dia y año; se calcuala en numero de dia en el año
   Calculo_dia(month,mydate);   //nos devuelve Total_dias_anyo
  
-  // Extract date and hour; muestra la fecha AAAA-MM-DD 
+  // Extraer la fecha; muestra la fecha AAAA-MM-DD 
   int splitT = formattedDate.indexOf("T");
   dayStamp = formattedDate.substring(0, splitT);
   Serial.print("FECHA: ");
   Serial.println(dayStamp);
   
-  // Extract time; y hora HH:MM:SS
+  // Extrae la hora HH:MM:SS
   timeStamp = formattedDate.substring(splitT+1, formattedDate.length()-1);
   Serial.print("HORA: ");
   Serial.println(timeStamp);
@@ -147,11 +157,11 @@ String Fecha_Hora(){
   
   //Teniendo identificada la fecha, hora como información solamente y calculado el día del año
   //se registra la temperatura ambiental en la hora especificada
-  for(int i = 0; i<24; i++){
+  for(int i = 0; i<24; i++){      //ciclo para hacer 24 registros en el arreglo
      int splitH = formattedDate.indexOf(":");
-     String hour = formattedDate.substring(11, 13);
+     String hour = formattedDate.substring(11, 13); //extrae la hora en que se registra la temperatura
                             //Serial.print("Horas: "); Serial.println(hour);
-      Toma_Temperatura(hour);
+      Toma_Temperatura(hour);          //llama a la funcion de lectura de la temperatura ambiental a trves del DHT21
       Temperaturas_DTH21[i]= temp_21; //registra la lectura de la temperatura ambiental
       delay(3000);
   }
@@ -161,29 +171,29 @@ String Fecha_Hora(){
 float Calculo_TempmMp(){
   //Leer lecturas de temperatura, calcular temperatura minima, maxima y promedio
   
-  temp_min = Temperaturas_DTH21[0];
-  temp_max = Temperaturas_DTH21[0];
-  for(int j = 1; j<24; j++){
-   float auxiliar = Temperaturas_DTH21[j];
-   if (auxiliar < temp_min){
-    temp_min = auxiliar;
+  temp_min = Temperaturas_DTH21[0];     //obtiene le primer registro dentro del arreglo y la considera como la temperatura minima
+  temp_max = Temperaturas_DTH21[0];     //obtiene le primer registro dentro del arreglo y la considera como la temperatura maxima
+  for(int j = 1; j<24; j++){            // hace un ciclo de 24 para leer todos los datos contenidos en el arreglo
+   float auxiliar = Temperaturas_DTH21[j];   //almacena en una variable auxiliar el valor obtenido de la posicion i
+   if (auxiliar < temp_min){                 //compara el valor de la posicion i con la temepratura minima, registrada hasta ahora
+    temp_min = auxiliar;                     // si auxiliar es menor que la temperatura minima, entonce auxiliar es ahora la temteperatura minima
    }
-   else {
-    if (auxiliar > temp_max){
-      temp_max = auxiliar;
+   else { // del if (auxiliar < temp_min)
+    if (auxiliar > temp_max){                 //compara el valor de la posicion i con la temepratura maxima, registrada hasta ahora              
+      temp_max = auxiliar;                    // si auxiliar es mayor que la temperatura maxima, entonce auxiliar es ahora la temteperatura maxima
     }
    }
   }
-   sum_temp = 0;
+   sum_temp = 0;                              // inicializa valor              
    Serial.println("Valores registrados de temperatura durante el día:");
-   for(int j = 0; j<24; j++){
+   for(int j = 0; j<24; j++){    // este ciclo for extrae los datos almacenados en el arreglo y los muestra
    Serial.print(Temperaturas_DTH21[j]);
    Serial.print(" ");
-   sum_temp = sum_temp + Temperaturas_DTH21[j];
+   sum_temp = sum_temp + Temperaturas_DTH21[j];   //va acumulando los datos del arreglo
    }
    
    Serial.println();
-   avg_temp = sum_temp /24;
+   avg_temp = sum_temp /24;                       // calcula el promedio de lo 24 datos de temepratura ambiental
    Serial.print("Temperatura mínima (°C): ");
    Serial.println(temp_min);
    Serial.print("Temperatura MAXIMA (°C): ");
@@ -217,17 +227,17 @@ float Toma_Temperatura(String hour){
 int Calculo_dia(String month, String mydate){
 //calcula el numero de días transcurridos en el año a la fecha actual
 //cada caso acumula los días de acuerdo al mes y finalmente se suman los dias transcurridos en el mes actual
-    int numero_mes = month.toInt();
+    int numero_mes = month.toInt();      //convierte month de tipo String a tipo entero y lo almacena en numero mes
     switch (numero_mes){
-           case 1:
-                  numero_de_dias = 0;
+           case 1:   //caso en que el mes actual sea enero
+                  numero_de_dias = 0;   //aun no se ha cumplido un mes completo
                   break;
-           case 2:
-                  numero_de_dias = 31;
+           case 2:    //caso en que el mes actual sea febrero
+                  numero_de_dias = 31;   //indica el número de dias transcurridos en el mes anterior
                   break;
-           case 3:
-                  numero_de_dias = 58;
-                  //revisar si es año bisiesto
+           case 3: //caso en que el mes actual sea marzo
+                  numero_de_dias = 58; //indica el número de dias transcurridos en total de los meses enero y febrero
+                  //revisar si es año bisiesto, queda pendiente
                   break;      
            case 4:
                   numero_de_dias = 90;
@@ -256,10 +266,10 @@ int Calculo_dia(String month, String mydate){
            case 12:
                   numero_de_dias = 334;
                   break;
-           return (numero_de_dias);
+           return (numero_de_dias);   //devuelve la funcion, el total de dias transcurridos a la fecha actual, meses completos
      }
-     int numero_dia =  mydate.toInt();
-     Total_dias_anyo = numero_de_dias + numero_dia;
+     int numero_dia =  mydate.toInt();   //convierte a entero el string que guarda el dia actual
+     Total_dias_anyo = numero_de_dias + numero_dia;  //suma los dias del mes actual a los calculados anteriormente de los meses completos ya transcurridos
      return (Total_dias_anyo);
 }
 
@@ -334,18 +344,18 @@ int Tiempo_de_Riego(float etc){
   //agua perdida por la planta a través de la EVAPOTRANSPIRACION, 
   //se calcula la Lamina de Riego Bruta (lrb)
   
-  lrb = etc / EFICIENCIA * 100;
-  lrb_m = lrb / 1000;               
+  lrb = etc / EFICIENCIA;         //calcula la lamina de riego bruta en mm/dia
+  lrb_m = lrb / 1000;             // calcula la lamina de riego bruta en m        
   Serial.print("Lámina de Riego Requerida: ");
   Serial.print(lrb_m);
   Serial.println(" m de agua");
 
-  //con la lrb en metros, se puede obtene el volumen de agua por planta, G
-  //g = lbr_m * area_de_riego      m3 de agua requeridos
+  //con la lrb en metros cubicos, se puede obtene el volumen de agua por planta, G
+  //g = lbr_m * area_de_riego      el resultado seran m3 de agua requeridos
 
-  g_1 = lrb_m * 94;       //area de la oficina
-  g_2 = lrb_m * 124;      //area de la casa
-  g_3 = lrb_m * 140;      //area del lago
+  g_1 = lrb_m * 94;       //area de la seccion 1
+  g_2 = lrb_m * 124;      //area de la seccion 2
+  g_3 = lrb_m * 140;      //area del seccion 3
   Serial.print("Cantidad de Agua, Sección 1: ");
   Serial.print(g_1);
   Serial.println(" m3 de agua");
@@ -359,7 +369,7 @@ int Tiempo_de_Riego(float etc){
   //teniendo la cantidad de agua requerida en cada seccion se calcula el tiempo
   // de riego o de aplicación necesario, considerando el gasto del sistema de riego
   // Ta = G/Ga
-  ga_1 = (10 * 9 ) / 1000;  //m3 por min
+  ga_1 = (10 * 9 ) / 1000;  //m3 por min, de acuerdo al calculo hidraulico de cada seccion
   ga_2 = (5 * 18) / 1000;
   ga_3 = (5 * 18) / 1000;
   Serial.println(ga_1); 
@@ -378,5 +388,3 @@ int Tiempo_de_Riego(float etc){
 }
 
 
-
-//https://randomnerdtutorials.com/esp32-ntp-client-date-time-arduino-ide/
